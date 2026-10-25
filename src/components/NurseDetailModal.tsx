@@ -116,6 +116,17 @@ export const NurseDetailModal: React.FC<NurseDetailModalProps> = ({
               <div className="text-sm font-bold text-slate-900 mt-0.5">
                 {nurse.situationActuelle}
               </div>
+              {nurse.situationActuelle === 'Système normal' && (
+                nurse.periodeSystemeNormal?.dateDebut && nurse.periodeSystemeNormal?.dateFin ? (
+                  <div className="text-[10px] text-emerald-800 font-mono font-medium mt-0.5">
+                    Du {formatDateFr(nurse.periodeSystemeNormal.dateDebut)} au {formatDateFr(nurse.periodeSystemeNormal.dateFin)}
+                  </div>
+                ) : (
+                  <div className="text-[10px] text-amber-700 font-medium mt-0.5">
+                    Période à définir
+                  </div>
+                )
+              )}
               <div className="text-[11px] text-teal-700 font-medium mt-1">
                 {formatFonction(nurse.fonction)}
               </div>
@@ -300,6 +311,29 @@ export const NurseDetailModal: React.FC<NurseDetailModalProps> = ({
                 <span className="font-semibold text-slate-800">{formatFonction(nurse.fonction)}</span>
               </div>
             </div>
+
+            {nurse.situationActuelle === 'Système normal' && (
+              <div className="bg-emerald-50/90 border border-emerald-200 rounded-lg p-3 text-xs text-emerald-950 space-y-1">
+                <div className="font-bold flex items-center gap-1.5 text-emerald-900">
+                  <Clock className="w-3.5 h-3.5 text-emerald-700" />
+                  Période du Tour de Rôle en Système Normal
+                </div>
+                {nurse.periodeSystemeNormal?.dateDebut && nurse.periodeSystemeNormal?.dateFin ? (
+                  <div>
+                    Période assignée : <strong className="font-mono">Du {formatDateFr(nurse.periodeSystemeNormal.dateDebut)} au {formatDateFr(nurse.periodeSystemeNormal.dateFin)}</strong>
+                    {nurse.periodeSystemeNormal.commentaire && (
+                      <div className="text-[11px] text-emerald-800 mt-0.5">
+                        Note : {nurse.periodeSystemeNormal.commentaire}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-amber-700 font-semibold text-[11px]">
+                    Période non définie pour ce mois. À renseigner via le formulaire ou le tour de rôle début de mois.
+                  </div>
+                )}
+              </div>
+            )}
 
             {nurse.notes && (
               <div className="pt-2 text-xs text-slate-600 bg-slate-50 p-2.5 rounded border border-slate-100">

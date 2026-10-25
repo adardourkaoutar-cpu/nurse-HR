@@ -13,7 +13,8 @@ import {
   Plus,
   Info,
   CalendarDays,
-  FileCheck2
+  FileCheck2,
+  RotateCcw
 } from 'lucide-react';
 import { NurseStaff, DemandeConge, TypeConge } from '../types/nurse';
 import { 
@@ -32,6 +33,7 @@ interface CalendarPlanningViewProps {
   onCancelPlannedLeave: (demandeId: string) => void;
   onNewLeave: () => void;
   onSelectNurse: (nurse: NurseStaff) => void;
+  onOpenRotationModal?: () => void;
 }
 
 export const CalendarPlanningView: React.FC<CalendarPlanningViewProps> = ({
@@ -41,6 +43,7 @@ export const CalendarPlanningView: React.FC<CalendarPlanningViewProps> = ({
   onCancelPlannedLeave,
   onNewLeave,
   onSelectNurse,
+  onOpenRotationModal,
 }) => {
   // Current view reference: default to current Moroccan calendar month in 2026
   const [currentYear, setCurrentYear] = useState<number>(2026);
@@ -262,8 +265,19 @@ export const CalendarPlanningView: React.FC<CalendarPlanningViewProps> = ({
             </button>
           </div>
 
-          {/* CTA */}
+          {/* CTAs */}
           <div className="flex items-center gap-2">
+            {onOpenRotationModal && (
+              <button
+                onClick={onOpenRotationModal}
+                className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-emerald-950 bg-emerald-100 hover:bg-emerald-200 border border-emerald-300 rounded-lg shadow-2xs transition-colors"
+                title="Définir manuellement la période du Système Normal pour ce mois"
+              >
+                <RotateCcw className="w-3.5 h-3.5 text-emerald-700" />
+                Tour de Rôle : Définir Période ({monthNames[currentMonth - 1]})
+              </button>
+            )}
+
             <button
               onClick={onNewLeave}
               className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-white bg-teal-700 hover:bg-teal-800 rounded-lg shadow-xs transition-colors"
@@ -349,6 +363,39 @@ export const CalendarPlanningView: React.FC<CalendarPlanningViewProps> = ({
               );
             })}
           </div>
+        </div>
+      )}
+
+      {/* 2.B TOUR DE RÔLE MENSUEL : Définition des périodes du Système Normal */}
+      {onOpenRotationModal && (
+        <div className="bg-emerald-50/90 border border-emerald-200 rounded-xl p-4 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <div className="p-2 bg-emerald-100 text-emerald-800 rounded-lg shrink-0 mt-0.5">
+              <RotateCcw className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-bold text-emerald-950">
+                  Tour de Rôle Mensuel · Alternance Système Normal & Système de Garde
+                </h3>
+                <span className="text-[10px] uppercase font-bold tracking-wide px-2 py-0.5 bg-emerald-200 text-emerald-900 rounded">
+                  {monthNames[currentMonth - 1]} {currentYear}
+                </span>
+              </div>
+              <p className="text-xs text-emerald-900 mt-1 max-w-3xl leading-relaxed">
+                Le personnel infirmier alterne entre le système de garde et le système normal. 
+                Au début de chaque mois, définissez manuellement les dates de début et de fin de période pour l'équipe en système normal.
+              </p>
+            </div>
+          </div>
+
+          <button
+            onClick={onOpenRotationModal}
+            className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold text-white bg-emerald-700 hover:bg-emerald-800 rounded-lg shadow-xs transition-colors shrink-0"
+          >
+            <Clock className="w-4 h-4" />
+            Définir les Périodes du Tour de Rôle
+          </button>
         </div>
       )}
 

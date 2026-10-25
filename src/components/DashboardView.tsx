@@ -13,7 +13,8 @@ import {
   Syringe, 
   FileBadge, 
   Plus, 
-  UserPlus 
+  UserPlus,
+  RotateCcw
 } from 'lucide-react';
 import { NurseStaff, DemandeConge, ReminderItem } from '../types/nurse';
 import { formatDateFr } from '../utils/calculations';
@@ -27,6 +28,7 @@ interface DashboardViewProps {
   onValidateReprise: (demandeId: string, nurseId: string) => void;
   onFilterSituation: (situation: string) => void;
   onNewNurse?: () => void;
+  onOpenRotationModal?: () => void;
 }
 
 export const DashboardView: React.FC<DashboardViewProps> = ({
@@ -38,6 +40,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onValidateReprise,
   onFilterSituation,
   onNewNurse,
+  onOpenRotationModal,
 }) => {
   // Calculs statistiques
   const totalNurses = nurses.length;
@@ -68,6 +71,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     n.fonction === 'Panseur'
   ).length;
   const fnSterilisation = nurses.filter(n => n.fonction === 'Stérilisation').length;
+
+  // Active rotation period for Système normal
+  const activePeriodeNormal = nurses.find(n => n.situationActuelle === 'Système normal' && n.periodeSystemeNormal?.dateDebut)?.periodeSystemeNormal;
 
   const urgentReminders = reminders.filter(r => r.niveau === 'urgent');
   const otherReminders = reminders.filter(r => r.niveau !== 'urgent').slice(0, 3);
@@ -121,6 +127,38 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               Ajouter le 1er Infirmier
             </button>
           )}
+        </div>
+      )}
+
+      {/* Tour de Rôle Mensuel Widget */}
+      {totalNurses > 0 && onOpenRotationModal && (
+        <div className="bg-emerald-50/90 border border-emerald-200 rounded-lg p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-emerald-100 text-emerald-800 rounded-md">
+              <RotateCcw className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="text-xs font-bold text-emerald-950 flex flex-wrap items-center gap-2">
+                <span>Tour de Rôle Mensuel (Système Normal ⮂ Système de Garde)</span>
+                {activePeriodeNormal && (
+                  <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-white border border-emerald-300 text-emerald-800">
+                    Période active : Du {formatDateFr(activePeriodeNormal.dateDebut)} au {formatDateFr(activePeriodeNormal.dateFin)}
+                  </span>
+                )}
+              </div>
+              <p className="text-[11px] text-emerald-800 mt-0.5">
+                Définissez les dates de début et de fin au début de chaque mois pour le staff en système normal et organisez l'alternance.
+              </p>
+            </div>
+          </div>
+
+          <button
+            onClick={onOpenRotationModal}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white bg-emerald-700 hover:bg-emerald-800 rounded-md shadow-2xs transition-colors shrink-0"
+          >
+            <Clock className="w-3.5 h-3.5" />
+            Définir les Périodes du Tour de Rôle
+          </button>
         </div>
       )}
 

@@ -12,6 +12,8 @@ import { PrintDocumentModal } from './components/PrintDocumentModal';
 import { DatabaseBackupModal } from './components/DatabaseBackupModal';
 import { AuthLockModal } from './components/AuthLockModal';
 import { ChangePasswordModal } from './components/ChangePasswordModal';
+import { RotationPlanningModal } from './components/RotationPlanningModal';
+import { CheckCircle2 } from 'lucide-react';
 
 import { NurseStaff, DemandeConge, SituationActuelle } from './types/nurse';
 import { INITIAL_NURSES, INITIAL_DEMANDES } from './data/mockData';
@@ -83,6 +85,8 @@ export default function App() {
   const [isLeaveFormOpen, setIsLeaveFormOpen] = useState(false);
   const [leavePreselectedNurse, setLeavePreselectedNurse] = useState<NurseStaff | null>(null);
   const [isBackupOpen, setIsBackupOpen] = useState(false);
+  const [isRotationModalOpen, setIsRotationModalOpen] = useState(false);
+  const [toastNotice, setToastNotice] = useState<string | null>(null);
 
   // Printing document modal state
   const [printDocConfig, setPrintDocConfig] = useState<{
@@ -160,6 +164,14 @@ export default function App() {
     if (selectedNurseForDetail?.id === id) {
       setSelectedNurseForDetail(null);
     }
+  };
+
+  const handleSaveRotation = (updatedNurses: NurseStaff[], summaryMsg: string) => {
+    setNurses(updatedNurses);
+    setToastNotice(summaryMsg);
+    setTimeout(() => {
+      setToastNotice(null);
+    }, 6000);
   };
 
   // 8. Actions: Leave & Resumption Management
@@ -367,6 +379,22 @@ export default function App() {
       {/* Main Content Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
         
+        {/* Toast Notification Banner */}
+        {toastNotice && (
+          <div className="mb-5 p-3.5 bg-emerald-50 border border-emerald-300 text-emerald-950 rounded-xl flex items-center justify-between shadow-xs animate-in fade-in slide-in-from-top-2 duration-200">
+            <div className="flex items-center gap-2.5 text-xs font-semibold">
+              <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0" />
+              <span>{toastNotice}</span>
+            </div>
+            <button
+              onClick={() => setToastNotice(null)}
+              className="text-emerald-800 hover:text-emerald-950 text-xs font-bold px-2 py-0.5 rounded hover:bg-emerald-100 transition-colors"
+            >
+              Fermer
+            </button>
+          </div>
+        )}
+
         {activeTab === 'dashboard' && (
           <DashboardView
             nurses={nurses}
@@ -385,6 +413,7 @@ export default function App() {
               setEditingNurse(null);
               setIsNurseFormOpen(true);
             }}
+            onOpenRotationModal={() => setIsRotationModalOpen(true)}
           />
         )}
 
@@ -406,6 +435,7 @@ export default function App() {
               setLeavePreselectedNurse(nurse);
               setIsLeaveFormOpen(true);
             }}
+            onOpenRotationModal={() => setIsRotationModalOpen(true)}
           />
         )}
 
@@ -434,6 +464,7 @@ export default function App() {
               setIsLeaveFormOpen(true);
             }}
             onSelectNurse={(nurse) => setSelectedNurseForDetail(nurse)}
+            onOpenRotationModal={() => setIsRotationModalOpen(true)}
           />
         )}
 
@@ -529,6 +560,17 @@ export default function App() {
         <ChangePasswordModal
           onSaveNewPassword={handleSaveNewPassword}
           onClose={() => setIsChangePasswordOpen(false)}
+        />
+      )}
+
+      {isRotationModalOpen && (
+        <RotationPlanningModal
+          isOpen={isRotationModalOpen}
+          onClose={() => setIsRotationModalOpen(false)}
+          nurses={nurses}
+          onSaveRotation={handleSaveRotation}
+          initialYear={2026}
+          initialMonth={11}
         />
       )}
 

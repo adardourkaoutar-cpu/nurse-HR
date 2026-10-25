@@ -18,7 +18,8 @@ import {
   ArrowDownUp,
   UserCheck,
   Stethoscope,
-  Scissors
+  Scissors,
+  RotateCcw
 } from 'lucide-react';
 import { NurseStaff, Specialite, Fonction } from '../types/nurse';
 import { 
@@ -37,6 +38,7 @@ interface NurseDirectoryViewProps {
   onDeleteNurse: (id: string) => void;
   onNewNurse: () => void;
   onDeclareLeave: (nurse: NurseStaff) => void;
+  onOpenRotationModal?: () => void;
   initialFilter?: string;
 }
 
@@ -77,6 +79,7 @@ export const NurseDirectoryView: React.FC<NurseDirectoryViewProps> = ({
   onDeleteNurse,
   onNewNurse,
   onDeclareLeave,
+  onOpenRotationModal,
   initialFilter,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -332,21 +335,39 @@ export const NurseDirectoryView: React.FC<NurseDirectoryViewProps> = ({
           </div>
         </td>
 
-        {/* Situation Actuelle */}
+        {/* Situation Actuelle & Tour de Rôle */}
         <td className="py-3 px-3">
-          <span className={`inline-flex items-center text-xs font-semibold ${
-            nurse.situationActuelle === 'Système normal'
-              ? 'text-emerald-700'
-              : nurse.situationActuelle === 'Système de garde'
-                ? 'text-amber-700'
-                : nurse.situationActuelle === 'Congé administratif'
-                  ? 'text-indigo-700'
-                  : nurse.situationActuelle === 'Congé de maladie'
-                    ? 'text-rose-700'
-                    : 'text-slate-700'
-          }`}>
-            {nurse.situationActuelle}
-          </span>
+          <div>
+            <span className={`inline-flex items-center text-xs font-semibold ${
+              nurse.situationActuelle === 'Système normal'
+                ? 'text-emerald-700'
+                : nurse.situationActuelle === 'Système de garde'
+                  ? 'text-amber-700'
+                  : nurse.situationActuelle === 'Congé administratif'
+                    ? 'text-indigo-700'
+                    : nurse.situationActuelle === 'Congé de maladie'
+                      ? 'text-rose-700'
+                      : 'text-slate-700'
+            }`}>
+              {nurse.situationActuelle}
+            </span>
+
+            {nurse.situationActuelle === 'Système normal' && (
+              nurse.periodeSystemeNormal?.dateDebut && nurse.periodeSystemeNormal?.dateFin ? (
+                <div 
+                  className="text-[10px] text-emerald-800 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded font-mono mt-0.5 flex items-center gap-1 w-fit"
+                  title={nurse.periodeSystemeNormal.commentaire || 'Période définie du tour de rôle'}
+                >
+                  <Clock className="w-2.5 h-2.5 text-emerald-600 shrink-0" />
+                  Du {formatDateFr(nurse.periodeSystemeNormal.dateDebut)} au {formatDateFr(nurse.periodeSystemeNormal.dateFin)}
+                </div>
+              ) : (
+                <div className="text-[10px] text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded font-medium mt-0.5 w-fit">
+                  Période à définir
+                </div>
+              )
+            )}
+          </div>
         </td>
 
         {/* Congé Administratif */}
@@ -528,6 +549,17 @@ export const NurseDirectoryView: React.FC<NurseDirectoryViewProps> = ({
               <Download className="w-3.5 h-3.5 text-slate-500" />
               Exporter CSV ({classifiedNurses.length})
             </button>
+
+            {onOpenRotationModal && (
+              <button
+                onClick={onOpenRotationModal}
+                className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-emerald-950 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 rounded-lg transition-colors whitespace-nowrap shadow-xs"
+                title="Définir manuellement la période du Système Normal et organiser le tour de rôle"
+              >
+                <RotateCcw className="w-3.5 h-3.5 text-emerald-700" />
+                Tour de Rôle Mensuel
+              </button>
+            )}
 
             <button
               onClick={onNewNurse}

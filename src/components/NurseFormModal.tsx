@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Save, AlertCircle, Baby, Heart } from 'lucide-react';
+import { X, Save, AlertCircle, Baby, Heart, Clock, Calendar } from 'lucide-react';
 import { 
   NurseStaff, 
   Specialite, 
@@ -8,7 +8,8 @@ import {
   Grade, 
   EtatFonctionPublique, 
   SituationActuelle,
-  Sexe
+  Sexe,
+  PeriodeSystemeNormal
 } from '../types/nurse';
 
 interface NurseFormModalProps {
@@ -103,8 +104,12 @@ export const NurseFormModal: React.FC<NurseFormModalProps> = ({
   // Congé maladie (3 mois / 90 jours)
   const [joursConsommesMaladie, setJoursConsommesMaladie] = useState<number>(initialNurse?.congeMaladie?.joursConsommes ?? 0);
   
-  // Situation actuelle & Contact
+  // Situation actuelle & Tour de Rôle
   const [situationActuelle, setSituationActuelle] = useState<SituationActuelle>(initialNurse?.situationActuelle || 'Système normal');
+  const [dateDebutNormal, setDateDebutNormal] = useState(initialNurse?.periodeSystemeNormal?.dateDebut || '');
+  const [dateFinNormal, setDateFinNormal] = useState(initialNurse?.periodeSystemeNormal?.dateFin || '');
+  const [commentaireTourRole, setCommentaireTourRole] = useState(initialNurse?.periodeSystemeNormal?.commentaire || '');
+
   const [email, setEmail] = useState(initialNurse?.email || '');
   const [notes, setNotes] = useState(initialNurse?.notes || '');
 
@@ -141,6 +146,22 @@ export const NurseFormModal: React.FC<NurseFormModalProps> = ({
       return;
     }
 
+    const effectiveSituation = (isFemmeMariee && enceinte && matCessation && matActif) 
+      ? 'Congé de maternité' 
+      : situationActuelle;
+
+    // Si Système normal, valider les dates de période de tour de rôle
+    if (effectiveSituation === 'Système normal') {
+      if (!dateDebutNormal || !dateFinNormal) {
+        setErrorMsg('Veuillez définir la période exacte (Date de début et Date de fin) du tour de rôle pour le Système Normal.');
+        return;
+      }
+      if (dateDebutNormal > dateFinNormal) {
+        setErrorMsg('La date de début du Système Normal doit être antérieure ou égale à la date de fin de période.');
+        return;
+      }
+    }
+
     const hasMaternite = isFemmeMariee && enceinte && matCessation;
 
     const nurseData: NurseStaff = {
@@ -160,7 +181,7 @@ export const NurseFormModal: React.FC<NurseFormModalProps> = ({
         dateCessation: matCessation,
         dateReprise: matReprise,
         dureeJours: 90,
-        actif: matActif || situationActuelle === 'Congé de maternité'
+        actif: matActif || effectiveSituation === 'Congé de maternité'
       } : undefined,
       nombreEnfants: Number(nombreEnfants) || 0,
       grade,
@@ -178,7 +199,12 @@ export const NurseFormModal: React.FC<NurseFormModalProps> = ({
         limiteAnnuelleMois: 3,
         joursConsommes: Number(joursConsommesMaladie) || 0,
       },
-      situationActuelle: (hasMaternite && matActif) ? 'Congé de maternité' : situationActuelle,
+      situationActuelle: effectiveSituation,
+      periodeSystemeNormal: effectiveSituation === 'Système normal' && dateDebutNormal && dateFinNormal ? {
+        dateDebut: dateDebutNormal,
+        dateFin: dateFinNormal,
+        commentaire: commentaireTourRole.trim() || undefined,
+      } : undefined,
       email: email.trim() || undefined,
       notes: notes.trim() || undefined,
     };
@@ -492,6 +518,95 @@ export const NurseFormModal: React.FC<NurseFormModalProps> = ({
                   {SITUATIONS.map(sit => <option key={sit} value={sit}>{sit}</option>)}
                 </select>
               </div>
+
+              {/* Si Système normal : Définition de la période du tour de rôle */}
+              {situationActuelle === 'Système normal' && (
+                <div className="md:col-span-3 bg-emerald-50/90 border border-emerald-300 rounded-lg p-3.5 space-y-2.5">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-emerald-200/80 pb-2">
+                    <span className="font-bold text-xs text-emerald-950 flex items-center gap-1.5">
+                      <Clock className="w-4 h-4 text-emerald-700" />
+                      Période du Tour de Rôle en Système Normal
+                    </span>
+                    <span className="text-[11px] text-emerald-800 bg-white border border-emerald-300 px-2 py-0.5 rounded font-medium">
+                      Alternance tour de rôle : Système de garde ⮂ Système normal
+                    </span>
+                  </div>
+
+                  <p className="text-[11px] text-emerald-900 leading-relaxed">
+                    Le staff fait un tour de rôle entre système de garde et système normal. 
+                    Veuillez définir manuellement la période exacte (date de début et date de fin) pour cet agent :
+                  </p>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 pt-1">
+                    <div>
+                      <label className="block text-[11px] font-bold text-emerald-950 mb-1">
+                        Date de début de la période *
+                      </label>
+                      <input
+                        type="date"
+                        required={situationActuelle === 'Système normal'}
+                        value={dateDebutNormal}
+                        onChange={(e) => setDateDebutNormal(e.target.value)}
+                        className="w-full px-3 py-1.5 border border-emerald-300 rounded-md bg-white focus:ring-1 focus:ring-emerald-500 font-medium text-xs text-slate-900"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-emerald-950 mb-1">
+                        Date de fin de la période *
+                      </label>
+                      <input
+                        type="date"
+                        required={situationActuelle === 'Système normal'}
+                        value={dateFinNormal}
+                        onChange={(e) => setDateFinNormal(e.target.value)}
+                        className="w-full px-3 py-1.5 border border-emerald-300 rounded-md bg-white focus:ring-1 focus:ring-emerald-500 font-medium text-xs text-slate-900"
+                      />
+                    </div>
+
+                    <div className="sm:col-span-2 md:col-span-1">
+                      <label className="block text-[11px] font-medium text-emerald-950 mb-1">
+                        Raccourcis de période
+                      </label>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setDateDebutNormal('2026-10-01');
+                            setDateFinNormal('2026-10-31');
+                          }}
+                          className="px-2 py-1 text-[10px] font-semibold bg-white hover:bg-emerald-100 text-emerald-900 border border-emerald-300 rounded transition-colors"
+                        >
+                          Octobre 2026
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setDateDebutNormal('2026-11-01');
+                            setDateFinNormal('2026-11-30');
+                          }}
+                          className="px-2 py-1 text-[10px] font-semibold bg-white hover:bg-emerald-100 text-emerald-900 border border-emerald-300 rounded transition-colors"
+                        >
+                          Novembre 2026
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-medium text-emerald-950 mb-1">
+                      Observation / Équipe de roulement (optionnel)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Ex: Équipe A - Bloc Central matinée / Vacation programmée"
+                      value={commentaireTourRole}
+                      onChange={(e) => setCommentaireTourRole(e.target.value)}
+                      className="w-full px-3 py-1 border border-emerald-200 rounded-md bg-white text-xs focus:ring-1 focus:ring-emerald-500"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 

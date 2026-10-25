@@ -227,7 +227,14 @@ export const PrintDocumentModal: React.FC<PrintDocumentModalProps> = ({
                     <div>Date recrutement: <strong>{formatDateFr(nurse.dateRecrutement)}</strong></div>
                     <div>Ancienneté: <strong>{anc.texte}</strong></div>
                     <div>Position: <strong>{nurse.etatFonctionPublique}</strong></div>
-                    <div>Situation actuelle: <strong>{nurse.situationActuelle}</strong></div>
+                    <div>
+                      Situation actuelle: <strong>{nurse.situationActuelle}</strong>
+                      {nurse.situationActuelle === 'Système normal' && nurse.periodeSystemeNormal?.dateDebut && (
+                        <div className="text-[11px] text-slate-700 font-mono mt-0.5">
+                          Période tour de rôle : Du {formatDateFr(nurse.periodeSystemeNormal.dateDebut)} au {formatDateFr(nurse.periodeSystemeNormal.dateFin)}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>

@@ -57,6 +57,13 @@ export interface CongeMaterniteData {
   actif: boolean;
 }
 
+export interface PeriodeSystemeNormal {
+  dateDebut: string; // YYYY-MM-DD
+  dateFin: string; // YYYY-MM-DD
+  moisReference?: string; // Ex: "2026-11"
+  commentaire?: string;
+}
+
 export interface NurseStaff {
   id: string;
   nom: string;
@@ -81,6 +88,7 @@ export interface NurseStaff {
   congeAdmin: CongeAdminData;
   congeMaladie: CongeMaladieData;
   situationActuelle: SituationActuelle;
+  periodeSystemeNormal?: PeriodeSystemeNormal; // Période explicite définie du tour de rôle en système normal
   email?: string;
   notes?: string;
 }
