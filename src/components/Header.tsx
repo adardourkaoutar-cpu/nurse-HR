@@ -9,8 +9,10 @@ import {
   Lock,
   KeyRound,
   Calendar,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Cloud
 } from 'lucide-react';
+import { User } from 'firebase/auth';
 
 export type ActiveTab = 'dashboard' | 'personnel' | 'conges' | 'calendrier' | 'gardes' | 'reminders';
 
@@ -19,6 +21,9 @@ interface HeaderProps {
   setActiveTab: (tab: ActiveTab) => void;
   unreadRemindersCount: number;
   nursesCount: number;
+  currentUser: User | null;
+  onOpenAuthSync: () => void;
+  isSyncing?: boolean;
   onOpenNewNurse: () => void;
   onOpenNewLeave: () => void;
   onOpenBackup: () => void;
@@ -31,6 +36,9 @@ export const Header: React.FC<HeaderProps> = ({
   setActiveTab,
   unreadRemindersCount,
   nursesCount,
+  currentUser,
+  onOpenAuthSync,
+  isSyncing = false,
   onOpenNewNurse,
   onOpenNewLeave,
   onOpenBackup,
@@ -154,6 +162,29 @@ export const Header: React.FC<HeaderProps> = ({
               className="p-2 text-slate-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition-colors"
             >
               <Lock className="w-4 h-4" />
+            </button>
+
+            {/* Cloud Sync Button */}
+            <button
+              onClick={onOpenAuthSync}
+              title={currentUser ? `Synchronisé : ${currentUser.email}` : "Se connecter pour synchroniser entre appareils"}
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs transition-all ${
+                currentUser 
+                  ? 'bg-emerald-50 border-emerald-300 text-emerald-900 font-semibold' 
+                  : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'
+              }`}
+            >
+              <Cloud className={`w-3.5 h-3.5 ${isSyncing ? 'animate-bounce text-teal-600' : currentUser ? 'text-emerald-600' : 'text-slate-500'}`} />
+              <span className="hidden sm:inline">
+                {currentUser ? (
+                  <span className="flex items-center gap-1">
+                    <span className="max-w-[110px] truncate">{currentUser.email?.split('@')[0]}</span>
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                  </span>
+                ) : (
+                  'Sync Cloud'
+                )}
+              </span>
             </button>
 
             {/* Backup */}

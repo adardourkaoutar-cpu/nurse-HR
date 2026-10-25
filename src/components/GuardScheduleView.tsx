@@ -51,6 +51,8 @@ import {
   exportGuardScheduleToWPS, 
   parseWPSOfficeFile 
 } from '../utils/wpsGuardExportImport';
+import { auth } from '../firebase';
+import { cloudSaveGuardSchedule } from '../services/cloudSyncService';
 
 const STORAGE_KEY_GUARD_ARCHIVES = 'blocrh_guard_archives_v2';
 
@@ -103,6 +105,27 @@ export const GuardScheduleView: React.FC<GuardScheduleViewProps> = ({
       console.error('Error saving guard archives', e);
     }
   }, [archives]);
+
+  // Listen for cloud sync or multi-window updates
+  useEffect(() => {
+    const handleArchivesSync = () => {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY_GUARD_ARCHIVES);
+        if (saved) {
+          setArchives(JSON.parse(saved));
+        }
+      } catch (e) {
+        console.error('Error handling archives update event', e);
+      }
+    };
+
+    window.addEventListener('storage', handleArchivesSync);
+    window.addEventListener('blocrh_archives_updated', handleArchivesSync);
+    return () => {
+      window.removeEventListener('storage', handleArchivesSync);
+      window.removeEventListener('blocrh_archives_updated', handleArchivesSync);
+    };
+  }, []);
 
   // Active working record in memory for current category, year, and month
   const [activeRecord, setActiveRecord] = useState<GuardScheduleRecord | null>(null);
@@ -370,6 +393,13 @@ export const GuardScheduleView: React.FC<GuardScheduleViewProps> = ({
 
     setActiveRecord(updatedRecord);
     showFeedback(`Le tableau de garde a été conservé avec succès dans l'Archive (${statut} - Version ${updatedRecord.version}).`);
+
+    // Sync to Cloud Firestore if logged in
+    if (auth.currentUser) {
+      cloudSaveGuardSchedule(auth.currentUser.uid, updatedRecord).catch(err => {
+        console.error('Error syncing guard schedule to cloud:', err);
+      });
+    }
   };
 
   // Initiate Rectification of an Archived Schedule
@@ -412,6 +442,13 @@ export const GuardScheduleView: React.FC<GuardScheduleViewProps> = ({
     setRectificationModalOpen(false);
     setSubView('grille');
     showFeedback(`Le tableau a été basculé en mode Rectification (Version ${newVersion}). Vous pouvez modifier les gardes ou réimporter depuis WPS Office.`);
+
+    // Sync to Cloud Firestore if logged in
+    if (auth.currentUser) {
+      cloudSaveGuardSchedule(auth.currentUser.uid, rectifiedRecord).catch(err => {
+        console.error('Error syncing rectified guard schedule to cloud:', err);
+      });
+    }
   };
 
   // Calculate daily totals for column coverage summary

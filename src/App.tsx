@@ -14,9 +14,22 @@ import { AuthLockModal } from './components/AuthLockModal';
 import { ChangePasswordModal } from './components/ChangePasswordModal';
 import { RotationPlanningModal } from './components/RotationPlanningModal';
 import { GuardScheduleView } from './components/GuardScheduleView';
-import { CheckCircle2 } from 'lucide-react';
+import { AuthSyncModal } from './components/AuthSyncModal';
+import { CheckCircle2, Cloud } from 'lucide-react';
+
+import { onAuthStateChanged, User } from 'firebase/auth';
+import { collection, onSnapshot } from 'firebase/firestore';
+import { auth, db, handleFirestoreError, OperationType } from './firebase';
+import { 
+  migrateLocalDataToCloud, 
+  cloudSaveNurse, 
+  cloudDeleteNurse, 
+  cloudSaveDemande, 
+  cloudDeleteDemande 
+} from './services/cloudSyncService';
 
 import { NurseStaff, DemandeConge, SituationActuelle } from './types/nurse';
+import { GuardScheduleRecord } from './types/guardSchedule';
 import { INITIAL_NURSES, INITIAL_DEMANDES } from './data/mockData';
 import { generateReminders } from './utils/calculations';
 
@@ -89,6 +102,132 @@ export default function App() {
   const [isRotationModalOpen, setIsRotationModalOpen] = useState(false);
   const [toastNotice, setToastNotice] = useState<string | null>(null);
 
+  // Cloud Auth & Cross-device Sync State
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [isAuthSyncOpen, setIsAuthSyncOpen] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  // Monitor Auth State & Perform Non-Destructive Migration upon Login/Register
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, async (user) => {
+      setCurrentUser(user);
+      if (user) {
+        setIsSyncing(true);
+        try {
+          let localArchives: GuardScheduleRecord[] = [];
+          try {
+            const saved = localStorage.getItem('blocrh_guard_archives_v2');
+            if (saved) localArchives = JSON.parse(saved);
+          } catch {}
+
+          // Do NOT delete previous changes: merge local into cloud and cloud into local
+          const merged = await migrateLocalDataToCloud(user.uid, nurses, demandes, localArchives);
+          if (merged) {
+            setNurses(merged.nurses);
+            setDemandes(merged.demandes);
+            if (merged.archives.length > 0) {
+              localStorage.setItem('blocrh_guard_archives_v2', JSON.stringify(merged.archives));
+            }
+          }
+          setToastNotice(`Connecté avec ${user.email} · Synchronisation multi-appareils active.`);
+          setTimeout(() => setToastNotice(null), 5000);
+        } catch (e) {
+          console.error('Error during cloud migration on auth change:', e);
+        } finally {
+          setIsSyncing(false);
+        }
+      }
+    });
+
+    return () => unsub();
+  }, []);
+
+  // Real-time synchronization listeners for multi-device sync
+  useEffect(() => {
+    if (!currentUser) return;
+
+    const nursesPath = `users/${currentUser.uid}/nurses`;
+    const unsubNurses = onSnapshot(collection(db, 'users', currentUser.uid, 'nurses'), (snapshot) => {
+      if (!snapshot.empty) {
+        const cloudNurses: NurseStaff[] = [];
+        snapshot.forEach(docSnap => {
+          cloudNurses.push(docSnap.data() as NurseStaff);
+        });
+        if (cloudNurses.length > 0) {
+          setNurses(cloudNurses);
+        }
+      }
+    }, (error) => {
+      handleFirestoreError(error, OperationType.GET, nursesPath);
+    });
+
+    const demandesPath = `users/${currentUser.uid}/demandes`;
+    const unsubDemandes = onSnapshot(collection(db, 'users', currentUser.uid, 'demandes'), (snapshot) => {
+      if (!snapshot.empty) {
+        const cloudDemandes: DemandeConge[] = [];
+        snapshot.forEach(docSnap => {
+          cloudDemandes.push(docSnap.data() as DemandeConge);
+        });
+        if (cloudDemandes.length > 0) {
+          setDemandes(cloudDemandes);
+        }
+      }
+    }, (error) => {
+      handleFirestoreError(error, OperationType.GET, demandesPath);
+    });
+
+    const guardSchedulesPath = `users/${currentUser.uid}/guardSchedules`;
+    const unsubGuardSchedules = onSnapshot(collection(db, 'users', currentUser.uid, 'guardSchedules'), (snapshot) => {
+      if (!snapshot.empty) {
+        const cloudSchedules: GuardScheduleRecord[] = [];
+        snapshot.forEach(docSnap => {
+          cloudSchedules.push(docSnap.data() as GuardScheduleRecord);
+        });
+        if (cloudSchedules.length > 0) {
+          try {
+            localStorage.setItem('blocrh_guard_archives_v2', JSON.stringify(cloudSchedules));
+            window.dispatchEvent(new Event('blocrh_archives_updated'));
+          } catch (e) {
+            console.error('Error storing synchronized guard schedules:', e);
+          }
+        }
+      }
+    }, (error) => {
+      handleFirestoreError(error, OperationType.GET, guardSchedulesPath);
+    });
+
+    return () => {
+      unsubNurses();
+      unsubDemandes();
+      unsubGuardSchedules();
+    };
+  }, [currentUser]);
+
+  const handleSyncNow = async () => {
+    if (!currentUser) return;
+    setIsSyncing(true);
+    try {
+      let localArchives: GuardScheduleRecord[] = [];
+      try {
+        const saved = localStorage.getItem('blocrh_guard_archives_v2');
+        if (saved) localArchives = JSON.parse(saved);
+      } catch {}
+
+      const merged = await migrateLocalDataToCloud(currentUser.uid, nurses, demandes, localArchives);
+      if (merged) {
+        setNurses(merged.nurses);
+        setDemandes(merged.demandes);
+        if (merged.archives.length > 0) {
+          localStorage.setItem('blocrh_guard_archives_v2', JSON.stringify(merged.archives));
+        }
+      }
+      setToastNotice('Données synchronisées dans le Cloud avec succès.');
+      setTimeout(() => setToastNotice(null), 4000);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   // Printing document modal state
   const [printDocConfig, setPrintDocConfig] = useState<{
     isOpen: boolean;
@@ -152,6 +291,10 @@ export default function App() {
       return [savedNurse, ...prev];
     });
 
+    if (currentUser) {
+      cloudSaveNurse(currentUser.uid, savedNurse).catch(console.error);
+    }
+
     if (selectedNurseForDetail && selectedNurseForDetail.id === savedNurse.id) {
       setSelectedNurseForDetail(savedNurse);
     }
@@ -162,6 +305,11 @@ export default function App() {
   const handleDeleteNurse = (id: string) => {
     setNurses(prev => prev.filter(n => n.id !== id));
     setDemandes(prev => prev.filter(d => d.nurseId !== id));
+
+    if (currentUser) {
+      cloudDeleteNurse(currentUser.uid, id).catch(console.error);
+    }
+
     if (selectedNurseForDetail?.id === id) {
       setSelectedNurseForDetail(null);
     }
@@ -169,6 +317,11 @@ export default function App() {
 
   const handleSaveRotation = (updatedNurses: NurseStaff[], summaryMsg: string) => {
     setNurses(updatedNurses);
+    if (currentUser) {
+      updatedNurses.forEach(n => {
+        cloudSaveNurse(currentUser.uid, n).catch(console.error);
+      });
+    }
     setToastNotice(summaryMsg);
     setTimeout(() => {
       setToastNotice(null);
@@ -178,6 +331,10 @@ export default function App() {
   // 8. Actions: Leave & Resumption Management
   const handleSaveLeave = (newDemande: DemandeConge) => {
     setDemandes(prev => [newDemande, ...prev]);
+
+    if (currentUser) {
+      cloudSaveDemande(currentUser.uid, newDemande).catch(console.error);
+    }
 
     if (newDemande.etatDemande === 'Confirmé') {
       const nurse = nurses.find(n => n.id === newDemande.nurseId);
@@ -191,13 +348,16 @@ export default function App() {
           newSituation = 'Congé exceptionnel';
         }
 
-        setNurses(prev => prev.map(n => {
-          if (n.id !== nurse.id) return n;
-          return {
-            ...n,
-            situationActuelle: newSituation,
-          };
-        }));
+        const updatedNurse = {
+          ...nurse,
+          situationActuelle: newSituation,
+        };
+
+        setNurses(prev => prev.map(n => n.id === nurse.id ? updatedNurse : n));
+
+        if (currentUser) {
+          cloudSaveNurse(currentUser.uid, updatedNurse).catch(console.error);
+        }
       }
     }
 
@@ -208,14 +368,22 @@ export default function App() {
   const handleUpdateDemande = (updatedDemande: DemandeConge) => {
     setDemandes(prev => prev.map(d => d.id === updatedDemande.id ? updatedDemande : d));
 
+    if (currentUser) {
+      cloudSaveDemande(currentUser.uid, updatedDemande).catch(console.error);
+    }
+
     if (updatedDemande.etatDemande === 'Refusé') {
       setNurses(prev => prev.map(n => {
         if (n.id !== updatedDemande.nurseId) return n;
         if (n.situationActuelle.includes('Congé')) {
-          return {
+          const updatedNurse = {
             ...n,
-            situationActuelle: 'Système normal'
+            situationActuelle: 'Système normal' as SituationActuelle
           };
+          if (currentUser) {
+            cloudSaveNurse(currentUser.uid, updatedNurse).catch(console.error);
+          }
+          return updatedNurse;
         }
         return n;
       }));
@@ -364,6 +532,9 @@ export default function App() {
         setActiveTab={setActiveTab}
         unreadRemindersCount={reminders.filter(r => r.niveau === 'urgent').length}
         nursesCount={nurses.length}
+        currentUser={currentUser}
+        onOpenAuthSync={() => setIsAuthSyncOpen(true)}
+        isSyncing={isSyncing}
         onOpenNewNurse={() => {
           setEditingNurse(null);
           setIsNurseFormOpen(true);
@@ -401,11 +572,15 @@ export default function App() {
             nurses={nurses}
             demandes={demandes}
             reminders={reminders}
+            currentUser={currentUser}
+            isSyncing={isSyncing}
+            onOpenAuthSync={() => setIsAuthSyncOpen(true)}
             onNavigateTab={(tab) => {
               if (tab === 'personnel') setActiveTab('personnel');
               else if (tab === 'conges') setActiveTab('conges');
               else if (tab === 'calendrier') setActiveTab('calendrier');
               else if (tab === 'reminders') setActiveTab('reminders');
+              else if (tab === 'gardes') setActiveTab('gardes');
             }}
             onSelectNurse={(nurse) => setSelectedNurseForDetail(nurse)}
             onValidateReprise={handleValidateReprise}
@@ -598,6 +773,15 @@ export default function App() {
           initialMonth={11}
         />
       )}
+
+      {/* Cloud Authentication & Sync Modal */}
+      <AuthSyncModal
+        isOpen={isAuthSyncOpen}
+        onClose={() => setIsAuthSyncOpen(false)}
+        currentUser={currentUser}
+        onSyncNow={handleSyncNow}
+        isSyncing={isSyncing}
+      />
 
     </div>
   );

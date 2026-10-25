@@ -1,0 +1,75 @@
+{
+  "entities": {
+    "Nurse": {
+      "title": "Nurse",
+      "description": "Hospital nurse staff member in the surgical department",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "nom": { "type": "string" },
+        "prenom": { "type": "string" },
+        "sexe": { "type": "string" },
+        "ppr": { "type": "string" },
+        "cni": { "type": "string" },
+        "specialite": { "type": "string" },
+        "fonction": { "type": "string" },
+        "dateNaissance": { "type": "string" },
+        "lieuNaissance": { "type": "string" },
+        "etatMarital": { "type": "string" },
+        "grade": { "type": "string" },
+        "dateRecrutement": { "type": "string" },
+        "etatFonctionPublique": { "type": "string" },
+        "situationActuelle": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["id", "nom", "prenom", "ppr", "specialite", "fonction"]
+    },
+    "LeaveRequest": {
+      "title": "LeaveRequest",
+      "description": "Leave request (demande de congé) for a nurse",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "nurseId": { "type": "string" },
+        "typeConge": { "type": "string" },
+        "dateDemande": { "type": "string" },
+        "dateCessation": { "type": "string" },
+        "dateReprisePrevue": { "type": "string" },
+        "nombreJours": { "type": "number" },
+        "etatDemande": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["id", "nurseId", "typeConge", "dateCessation", "dateReprisePrevue", "etatDemande"]
+    },
+    "GuardSchedule": {
+      "title": "GuardSchedule",
+      "description": "Monthly guard and normal hours roster record",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "mois": { "type": "number" },
+        "annee": { "type": "number" },
+        "moisLibelle": { "type": "string" },
+        "categorie": { "type": "string" },
+        "version": { "type": "number" },
+        "statut": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["id", "mois", "annee", "categorie", "version", "statut"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}/nurses/{nurseId}": {
+      "schema": "Nurse",
+      "description": "Nurses managed by the authenticated user"
+    },
+    "/users/{userId}/demandes/{demandeId}": {
+      "schema": "LeaveRequest",
+      "description": "Leave requests managed by the authenticated user"
+    },
+    "/users/{userId}/guardSchedules/{scheduleId}": {
+      "schema": "GuardSchedule",
+      "description": "Guard schedule rosters archived by the authenticated user"
+    }
+  }
+}
