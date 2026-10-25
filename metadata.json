@@ -1,0 +1,6 @@
+{
+  "name": "BlocRH - Gestion du Staff Infirmier Bloc Opératoire",
+  "description": "Application hospitalière de gestion des ressources humaines, dossiers administratifs, congés et suivi des reprises/cessations pour le personnel infirmier du bloc opératoire.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
