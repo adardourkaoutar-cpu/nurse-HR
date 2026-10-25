@@ -8,10 +8,11 @@ import {
   Stethoscope,
   Lock,
   KeyRound,
-  Calendar
+  Calendar,
+  FileSpreadsheet
 } from 'lucide-react';
 
-export type ActiveTab = 'dashboard' | 'personnel' | 'conges' | 'calendrier' | 'reminders';
+export type ActiveTab = 'dashboard' | 'personnel' | 'conges' | 'calendrier' | 'gardes' | 'reminders';
 
 interface HeaderProps {
   activeTab: ActiveTab;
@@ -103,6 +104,18 @@ export const Header: React.FC<HeaderProps> = ({
             >
               <Calendar className="w-4 h-4" />
               Calendrier & Planning
+            </button>
+
+            <button
+              onClick={() => setActiveTab('gardes')}
+              className={`px-3 py-2 text-sm font-medium rounded-md transition-colors whitespace-nowrap shrink-0 flex items-center gap-1.5 ${
+                activeTab === 'gardes'
+                  ? 'bg-slate-100 text-teal-800 font-semibold'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+              }`}
+            >
+              <FileSpreadsheet className="w-4 h-4" />
+              Tableaux de Garde (WPS)
             </button>
 
             <button
@@ -204,6 +217,14 @@ export const Header: React.FC<HeaderProps> = ({
             }`}
           >
             Calendrier
+          </button>
+          <button
+            onClick={() => setActiveTab('gardes')}
+            className={`px-3 py-1.5 text-xs font-medium rounded-md whitespace-nowrap ${
+              activeTab === 'gardes' ? 'bg-teal-700 text-white' : 'text-slate-600 bg-slate-100'
+            }`}
+          >
+            Tableaux Garde (WPS)
           </button>
           <button
             onClick={() => setActiveTab('reminders')}

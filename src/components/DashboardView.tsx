@@ -14,7 +14,11 @@ import {
   FileBadge, 
   Plus, 
   UserPlus,
-  RotateCcw
+  RotateCcw,
+  FileSpreadsheet,
+  Shield,
+  Layers,
+  Sparkles
 } from 'lucide-react';
 import { NurseStaff, DemandeConge, ReminderItem } from '../types/nurse';
 import { formatDateFr } from '../utils/calculations';
@@ -23,7 +27,7 @@ interface DashboardViewProps {
   nurses: NurseStaff[];
   demandes: DemandeConge[];
   reminders: ReminderItem[];
-  onNavigateTab: (tab: 'personnel' | 'conges' | 'reminders' | 'calendrier') => void;
+  onNavigateTab: (tab: 'personnel' | 'conges' | 'reminders' | 'calendrier' | 'gardes') => void;
   onSelectNurse: (nurse: NurseStaff) => void;
   onValidateReprise: (demandeId: string, nurseId: string) => void;
   onFilterSituation: (situation: string) => void;
@@ -159,6 +163,96 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <Clock className="w-3.5 h-3.5" />
             Définir les Périodes du Tour de Rôle
           </button>
+        </div>
+      )}
+
+      {/* Tableaux de Garde (3 Catégories Séparées) & WPS Office Preparation Widget */}
+      {totalNurses > 0 && (
+        <div className="bg-white border-2 border-teal-600/30 rounded-lg p-4 shadow-sm space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-start gap-3">
+              <div className="p-2.5 bg-teal-700 text-white rounded-lg shadow-sm">
+                <FileSpreadsheet className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold uppercase tracking-wider text-teal-800">
+                    Tableaux de Garde & Système Normal
+                  </span>
+                  <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-100 text-amber-900 border border-amber-300">
+                    Période 25 au 30/31 active
+                  </span>
+                </div>
+                <h3 className="text-sm font-bold text-slate-900 mt-0.5">
+                  Préparation du Roster de Novembre 2026 (Compatible WPS Office)
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Listes distinctes par catégorie · Cycle standard (GJ 12h → GN 12h → R 48h) · Périodes CA et HN verrouillées au préalable
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={() => onNavigateTab('gardes')}
+              className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-bold text-white bg-teal-800 hover:bg-teal-900 rounded-lg shadow-sm transition-all shrink-0"
+            >
+              <FileSpreadsheet className="w-4 h-4 text-teal-200" />
+              <span>Ouvrir Tableaux de Garde (WPS)</span>
+            </button>
+          </div>
+
+          {/* Quick links to the 3 separated categories */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-2 border-t border-slate-100 text-xs">
+            
+            <div 
+              onClick={() => onNavigateTab('gardes')}
+              className="p-2.5 rounded-lg border border-slate-200 bg-slate-50 hover:bg-teal-50 hover:border-teal-200 transition-colors cursor-pointer flex items-center justify-between"
+            >
+              <div className="flex items-center gap-2">
+                <Shield className="w-4 h-4 text-teal-700" />
+                <div>
+                  <div className="font-bold text-slate-800">1. Anesthésistes (IAR)</div>
+                  <div className="text-[10px] text-slate-500">Liste distincte de garde 12h</div>
+                </div>
+              </div>
+              <span className="font-mono font-bold text-xs bg-white px-2 py-0.5 rounded border border-slate-200 text-slate-700">
+                {iar + (fnAnesthesiste > iar ? fnAnesthesiste - iar : 0)}
+              </span>
+            </div>
+
+            <div 
+              onClick={() => onNavigateTab('gardes')}
+              className="p-2.5 rounded-lg border border-slate-200 bg-slate-50 hover:bg-teal-50 hover:border-teal-200 transition-colors cursor-pointer flex items-center justify-between"
+            >
+              <div className="flex items-center gap-2">
+                <Layers className="w-4 h-4 text-indigo-700" />
+                <div>
+                  <div className="font-bold text-slate-800">2. Aide-Opératoire / Panseur</div>
+                  <div className="text-[10px] text-slate-500">IBO & IP · Roster chirurgical</div>
+                </div>
+              </div>
+              <span className="font-mono font-bold text-xs bg-white px-2 py-0.5 rounded border border-slate-200 text-slate-700">
+                {fnAideOpPanseur}
+              </span>
+            </div>
+
+            <div 
+              onClick={() => onNavigateTab('gardes')}
+              className="p-2.5 rounded-lg border border-slate-200 bg-slate-50 hover:bg-teal-50 hover:border-teal-200 transition-colors cursor-pointer flex items-center justify-between"
+            >
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-amber-700" />
+                <div>
+                  <div className="font-bold text-slate-800">3. Stérilisation</div>
+                  <div className="text-[10px] text-slate-500">Stérilisation Centrale</div>
+                </div>
+              </div>
+              <span className="font-mono font-bold text-xs bg-white px-2 py-0.5 rounded border border-slate-200 text-slate-700">
+                {fnSterilisation}
+              </span>
+            </div>
+
+          </div>
         </div>
       )}
 

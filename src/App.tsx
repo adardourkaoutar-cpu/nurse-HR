@@ -13,6 +13,7 @@ import { DatabaseBackupModal } from './components/DatabaseBackupModal';
 import { AuthLockModal } from './components/AuthLockModal';
 import { ChangePasswordModal } from './components/ChangePasswordModal';
 import { RotationPlanningModal } from './components/RotationPlanningModal';
+import { GuardScheduleView } from './components/GuardScheduleView';
 import { CheckCircle2 } from 'lucide-react';
 
 import { NurseStaff, DemandeConge, SituationActuelle } from './types/nurse';
@@ -465,6 +466,30 @@ export default function App() {
             }}
             onSelectNurse={(nurse) => setSelectedNurseForDetail(nurse)}
             onOpenRotationModal={() => setIsRotationModalOpen(true)}
+          />
+        )}
+
+        {activeTab === 'gardes' && (
+          <GuardScheduleView
+            nurses={nurses}
+            demandes={demandes}
+            onOpenNurseDetail={(nurse) => setSelectedNurseForDetail(nurse)}
+            onUpdateNurseHNPeriod={(nurseId, dateDebut, dateFin) => {
+              setNurses(prev => prev.map(n => {
+                if (n.id !== nurseId) return n;
+                return {
+                  ...n,
+                  situationActuelle: 'Système normal',
+                  periodeSystemeNormal: {
+                    dateDebut,
+                    dateFin,
+                    commentaire: 'Défini pour tableau de garde'
+                  }
+                };
+              }));
+              setToastNotice('Période Système Normal mise à jour.');
+              setTimeout(() => setToastNotice(null), 4000);
+            }}
           />
         )}
 
