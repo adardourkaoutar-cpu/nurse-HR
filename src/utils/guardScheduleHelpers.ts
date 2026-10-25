@@ -59,6 +59,22 @@ export function getCategoryLabel(category: GuardCategory): string {
 }
 
 /**
+ * Get cadre designation strictly according to official template
+ */
+export function getCadreLabel(category: GuardCategory): string {
+  switch (category) {
+    case 'anesth':
+      return 'Infirmiers en anesthésie-réanimation';
+    case 'aide_op_panseur':
+      return 'Infirmiers panseurs/aide-opératoire';
+    case 'sterilisation':
+      return 'Infirmiers en stérilisation';
+    default:
+      return 'Infirmiers du Bloc opératoire';
+  }
+}
+
+/**
  * Month names in French
  */
 export const MOIS_FR = [
@@ -239,15 +255,23 @@ export function createInitialGuardRecord(
     };
   });
 
+  const cadreLibelle = getCadreLabel(category);
+  const moisNom = MOIS_FR[month - 1];
+
   return {
     id: `sched_${category}_${year}_${month}_${Date.now()}`,
     mois: month,
     annee: year,
     moisLibelle,
+    moisNom,
     categorie: category,
     categorieLibelle: getCategoryLabel(category),
+    cadreLibelle,
+    service: 'Bloc opératoire',
+    delegation: 'Délégation provinciale de Sidi Ifni',
+    etablissement: 'Centre hospitalier provincial Sidi Ifni',
     version: 1,
-    titre: `Tableau de Garde ${getCategoryLabel(category)} - ${moisLibelle}`,
+    titre: `Liste de garde/horaire normal - ${cadreLibelle} - ${moisLibelle}`,
     dateCreation: new Date().toISOString(),
     dateDerniereModification: new Date().toISOString(),
     statut: 'Brouillon',

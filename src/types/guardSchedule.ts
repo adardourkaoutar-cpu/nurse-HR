@@ -114,8 +114,13 @@ export interface GuardScheduleRecord {
   mois: number; // 1-12 (ex: 11)
   annee: number; // ex: 2026
   moisLibelle: string; // "Novembre 2026"
+  moisNom: string; // "Novembre" or "Octobre"
   categorie: GuardCategory;
   categorieLibelle: string; // "Anesthésistes" | "Aide-Opératoire & Panseurs" | "Stérilisation"
+  cadreLibelle: string; // "Infirmiers en anesthésie-réanimation" | "Infirmiers panseurs/aide-opératoire" | "Infirmiers en stérilisation"
+  service: string; // "Bloc opératoire"
+  delegation: string; // "Délégation provinciale de Sidi Ifni"
+  etablissement: string; // "Centre hospitalier provincial Sidi Ifni"
   version: number; // 1, 2, 3...
   titre: string;
   dateCreation: string; // ISO

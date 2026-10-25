@@ -30,42 +30,50 @@ export function exportGuardScheduleToWPS(record: GuardScheduleRecord): void {
   const wb = XLSX.utils.book_new();
   const daysCount = getDaysInMonth(record.annee, record.mois);
 
-  // Build the 2D sheet data
+  // Build the 2D sheet data matching the user's PDF template exactly
   const data: any[][] = [];
 
-  // Header Titles
-  data.push(['ROYAUME DU MAROC']);
-  data.push(['MINISTÈRE DE LA SANTÉ ET DE LA PROTECTION SOCIALE']);
-  data.push(['SERVICE DU BLOC OPÉRATOIRE - TABLEAU MENSUEL DE GARDE ET SYSTÈME NORMAL']);
-  data.push([
-    `PÉRIODE : ${record.moisLibelle.toUpperCase()} (${record.mois}/${record.annee})`,
-    '',
-    `CATÉGORIE : ${record.categorieLibelle.toUpperCase()}`,
-    '',
-    `VERSION : V${record.version} (${record.statut})`
-  ]);
-  data.push([
-    'RÈGLE DU CYCLE : Garde de Jour (GJ 12h) -> Garde de Nuit (GN 12h le lendemain) -> Récupération (R 48h) | HN: Horaire Normal | CA: Congé'
-  ]);
-  data.push([]); // blank line
+  // 1. Official Header (Bilingual French / Arabic as in PDF template)
+  const padRight = (left: string, right: string) => {
+    const row = new Array(32).fill('');
+    row[0] = left;
+    row[28] = right;
+    return row;
+  };
 
-  // Table Column Headers
-  const headerRow: string[] = ['N°', 'Nom & Prénom', 'PPR', 'Spécialité', 'Fonction'];
-  for (let d = 1; d <= daysCount; d++) {
-    const dow = getDayOfWeekShort(record.annee, record.mois, d);
-    headerRow.push(`${d} (${dow})`);
+  data.push(padRight('Royaume du Maroc', 'المملكة المغربية'));
+  data.push(padRight('Ministère de la santé et de la protection sociale', 'وزارة الصحة والحماية الاجتماعية'));
+  data.push(padRight('Délégation provinciale de Sidi Ifni', 'المندوبية الإقليمية لسيدي إفني'));
+  data.push(padRight('Centre hospitalier provincial Sidi Ifni', 'المركز الاستشفائي الإقليمي سيدي إفني'));
+  data.push([]); // blank
+
+  // 2. Title
+  const titleRow = new Array(32).fill('');
+  titleRow[10] = 'Liste de garde/horaire normal';
+  data.push(titleRow);
+  data.push([]); // blank
+
+  // 3. Sub-header (Service, Mois, Année, Cadre)
+  const metaRow = new Array(32).fill('');
+  metaRow[0] = 'Service : Bloc opératoire';
+  metaRow[8] = `Mois : ${record.moisNom || record.moisLibelle.split(' ')[0]}`;
+  metaRow[16] = `Année : ${record.annee}`;
+  metaRow[22] = `Cadre : ${record.cadreLibelle || record.categorieLibelle}`;
+  data.push(metaRow);
+  data.push([]); // blank
+
+  // 4. Table Header: "NOM COMPLET" then days 1 to 31
+  const headerRow: string[] = ['NOM COMPLET'];
+  for (let d = 1; d <= 31; d++) {
+    headerRow.push(String(d));
   }
-  headerRow.push('Total GJ', 'Total GN', 'Total R', 'Total HN', 'Total CA', 'Total H Garde');
+  headerRow.push('Total GJ', 'Total GN', 'Total R', 'Total HN', 'Total CA', 'Total H');
   data.push(headerRow);
 
-  // Data rows for nurses
-  record.lignes.forEach((ligne, index) => {
+  // 5. Data rows for nurses
+  record.lignes.forEach((ligne) => {
     const row: any[] = [
-      index + 1,
-      `${ligne.nom.toUpperCase()} ${ligne.prenom}`,
-      ligne.ppr,
-      ligne.specialite,
-      ligne.fonction
+      `${ligne.nom.toUpperCase()} ${ligne.prenom}`
     ];
 
     let countGJ = 0;
@@ -74,79 +82,69 @@ export function exportGuardScheduleToWPS(record: GuardScheduleRecord): void {
     let countHN = 0;
     let countCA = 0;
 
-    for (let d = 1; d <= daysCount; d++) {
-      const assignment = ligne.assignments[d];
-      const shift = assignment ? assignment.shift : '';
-      row.push(shift);
+    for (let d = 1; d <= 31; d++) {
+      if (d <= daysCount) {
+        const assignment = ligne.assignments[d];
+        const shift = assignment ? assignment.shift : '';
+        row.push(shift);
 
-      if (shift === 'GJ') countGJ++;
-      else if (shift === 'GN') countGN++;
-      else if (shift === 'R') countR++;
-      else if (shift === 'HN') countHN++;
-      else if (shift === 'CA') countCA++;
+        if (shift === 'GJ') countGJ++;
+        else if (shift === 'GN') countGN++;
+        else if (shift === 'R') countR++;
+        else if (shift === 'HN') countHN++;
+        else if (shift === 'CA') countCA++;
+      } else {
+        // Days beyond month (e.g. day 31 in a 30-day month)
+        row.push('/');
+      }
     }
 
     const totalHeures = (countGJ + countGN) * 12;
-
     row.push(countGJ, countGN, countR, countHN, countCA, `${totalHeures}h`);
     data.push(row);
   });
 
-  // Daily Totals Row for quick coverage audit in WPS Office
-  data.push([]);
-  const totalGJRow: any[] = ['', 'TOTAL GARDES DE JOUR (GJ)', '', '', ''];
-  const totalGNRow: any[] = ['', 'TOTAL GARDES DE NUIT (GN)', '', '', ''];
+  // 6. Legend row matching exact PDF:
+  // "NB :   GJ : garde de jour   GN : garde de nuit   R : récupération   HN : horaire normal   CA : congé administratif"
+  data.push([]); // blank
+  const legendRow = new Array(32).fill('');
+  legendRow[2] = 'NB :';
+  legendRow[4] = 'GJ : garde de jour';
+  legendRow[9] = 'GN : garde de nuit';
+  legendRow[14] = 'R : récupération';
+  legendRow[19] = 'HN : horaire normal';
+  legendRow[25] = 'CA : congé administratif';
+  data.push(legendRow);
 
-  for (let d = 1; d <= daysCount; d++) {
-    let dayGJ = 0;
-    let dayGN = 0;
-    record.lignes.forEach(l => {
-      const s = l.assignments[d]?.shift;
-      if (s === 'GJ') dayGJ++;
-      if (s === 'GN') dayGN++;
-    });
-    totalGJRow.push(dayGJ);
-    totalGNRow.push(dayGN);
-  }
-  data.push(totalGJRow);
-  data.push(totalGNRow);
+  // 7. Signature row matching exact PDF:
+  // "Infirmier Chef :"           "Chef du PSI :"           "Le directeur :"
+  data.push([]); // blank
+  data.push([]); // blank
+  const signatureRow = new Array(32).fill('');
+  signatureRow[1] = 'Infirmier Chef :';
+  signatureRow[13] = 'Chef du PSI :';
+  signatureRow[26] = 'Le directeur :';
+  data.push(signatureRow);
 
-  // Instructions & Legend for WPS user
-  data.push([]);
-  data.push(['GUIDE D\'UTILISATION DANS WPS OFFICE :']);
-  data.push(['1. Respectez les abréviations : GJ (Garde Jour 12h), GN (Garde Nuit 12h), R (Récupération 48h), HN (Horaire normal), CA (Congé)']);
-  data.push(['2. Ne modifiez pas la colonne PPR afin de garantir la correspondance exacte lors de la ré-importation dans BlocRH']);
-  data.push(['3. Après saisie ou rectification dans WPS Office, sauvegardez le fichier puis importez-le dans l\'application']);
-  data.push(['4. Visa du Médecin Chef de Service et de l\'Infirmier Chef du Bloc Opératoire']);
-
-  // Create sheet
+  // Create worksheet
   const ws = XLSX.utils.aoa_to_sheet(data);
 
-  // Column width formatting for comfortable reading in WPS Office
+  // Column width formatting
   const colWidths: any[] = [
-    { wch: 5 },   // N°
-    { wch: 26 },  // Nom
-    { wch: 12 },  // PPR
-    { wch: 10 },  // Spe
-    { wch: 22 },  // Fonction
+    { wch: 28 }, // NOM COMPLET
   ];
-  for (let d = 1; d <= daysCount; d++) {
-    colWidths.push({ wch: 6 });
+  for (let d = 1; d <= 31; d++) {
+    colWidths.push({ wch: 4.5 });
   }
-  colWidths.push({ wch: 9 }, { wch: 9 }, { wch: 8 }, { wch: 9 }, { wch: 9 }, { wch: 12 });
+  colWidths.push({ wch: 8 }, { wch: 8 }, { wch: 7 }, { wch: 8 }, { wch: 8 }, { wch: 10 });
   ws['!cols'] = colWidths;
 
-  const sheetName = record.categorie === 'anesth' 
-    ? 'Garde Anesthésie' 
-    : record.categorie === 'aide_op_panseur' 
-      ? 'Garde Aide-Op Panseur' 
-      : 'Garde Stérilisation';
-
+  const sheetName = 'Liste de garde';
   XLSX.utils.book_append_sheet(wb, ws, sheetName);
 
-  // Sanitize filename for download
-  const cleanMois = record.moisLibelle.replace(/\s+/g, '_');
-  const fileName = `Tableau_Garde_WPS_${record.categorie}_${cleanMois}_v${record.version}.xlsx`;
+  // Sanitize filename
+  const cleanMois = (record.moisNom || record.moisLibelle.split(' ')[0]).replace(/\s+/g, '_');
+  const fileName = `Liste_de_garde_${record.categorie}_${cleanMois}_${record.annee}.xlsx`;
 
   XLSX.writeFile(wb, fileName);
 }

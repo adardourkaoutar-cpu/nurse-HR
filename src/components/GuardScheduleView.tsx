@@ -25,8 +25,10 @@ import {
   X,
   FileCheck2,
   RefreshCw,
-  Search
+  Search,
+  Eye
 } from 'lucide-react';
+import { MoroccanCoatOfArms } from './MoroccanCoatOfArms';
 import { NurseStaff, DemandeConge } from '../types/nurse';
 import { 
   GuardCategory, 
@@ -78,6 +80,9 @@ export const GuardScheduleView: React.FC<GuardScheduleViewProps> = ({
 
   // Sub-view: 'grille' (Interactive roster & WPS), 'pre_verrouillage' (Pre-defined CA & HN review), 'archives' (Stored history)
   const [subView, setSubView] = useState<'grille' | 'pre_verrouillage' | 'archives'>('grille');
+
+  // Display mode for grid: 'modele_officiel' (matching exact PDF template) or 'vue_etendue' (with totals & details)
+  const [viewMode, setViewMode] = useState<'modele_officiel' | 'vue_etendue'>('modele_officiel');
 
   // Stored Archives
   const [archives, setArchives] = useState<GuardScheduleRecord[]>(() => {
@@ -692,8 +697,48 @@ export const GuardScheduleView: React.FC<GuardScheduleViewProps> = ({
               </button>
             </div>
 
-            {/* Right: Archive & Print Actions */}
-            <div className="flex items-center gap-2">
+            {/* Right: View Mode Toggle & Archive / Print Actions */}
+            <div className="flex flex-wrap items-center gap-2">
+              
+              {/* View Mode Switcher */}
+              <div className="flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200 text-xs">
+                <button
+                  onClick={() => setViewMode('modele_officiel')}
+                  className={`px-2.5 py-1.5 rounded-md font-semibold transition-all flex items-center gap-1.5 ${
+                    viewMode === 'modele_officiel' 
+                      ? 'bg-white text-slate-900 shadow-xs' 
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                  title="Affichage 100% conforme au modèle officiel du Centre Hospitalier Sidi Ifni"
+                >
+                  <FileSpreadsheet className="w-3.5 h-3.5 text-teal-700" />
+                  <span>Modèle Officiel (Sidi Ifni)</span>
+                </button>
+                <button
+                  onClick={() => setViewMode('vue_etendue')}
+                  className={`px-2.5 py-1.5 rounded-md font-semibold transition-all flex items-center gap-1.5 ${
+                    viewMode === 'vue_etendue' 
+                      ? 'bg-white text-slate-900 shadow-xs' 
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                  title="Affichage avec totaux, PPR, jours de la semaine et détails statistiques"
+                >
+                  <span>Vue Étendue (Totaux)</span>
+                </button>
+              </div>
+
+              {/* Link to view raw uploaded PDF template */}
+              <a
+                href="/assets/aistudio/LISTE_DE_GARDE_VIERGE_77a219c0.pdf"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-2 text-slate-600 hover:text-teal-800 hover:bg-slate-100 border border-slate-200 rounded-lg transition-colors flex items-center gap-1.5 text-xs font-semibold"
+                title="Consulter le fichier PDF officiel original fourni par l'hôpital"
+              >
+                <Eye className="w-4 h-4 text-teal-700" />
+                <span className="hidden md:inline">Modèle PDF Vierge</span>
+              </a>
+
               <button
                 onClick={() => handleSaveToArchive('Brouillon')}
                 className="px-3 py-2 text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
@@ -712,7 +757,7 @@ export const GuardScheduleView: React.FC<GuardScheduleViewProps> = ({
               <button
                 onClick={() => setPrintRecord(activeRecord)}
                 className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200 rounded-lg transition-colors"
-                title="Imprimer le tableau officiel avec visas"
+                title="Imprimer le tableau officiel conforme avec visas"
               >
                 <Printer className="w-4 h-4" />
               </button>
@@ -766,213 +811,398 @@ export const GuardScheduleView: React.FC<GuardScheduleViewProps> = ({
             </div>
           </div>
 
-          {/* Interactive Table Container */}
-          <div className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse text-[11px]">
-                
-                {/* Table Header */}
-                <thead>
-                  <tr className="bg-slate-100 border-b border-slate-200 text-slate-700">
-                    <th className="sticky left-0 z-20 bg-slate-100 px-3 py-2.5 text-left font-bold text-slate-900 border-r border-slate-200 w-52 min-w-[210px]">
-                      Personnel (du plus âgé au plus jeune)
-                    </th>
-                    <th className="px-2 py-2.5 text-center font-semibold border-r border-slate-200 w-20">
-                      PPR
-                    </th>
-                    <th className="px-2 py-2.5 text-center font-semibold border-r border-slate-200 w-24">
-                      Fonction
-                    </th>
+          {/* ========================================================================= */}
+          {/* VIEW MODE 1: MODÈLE OFFICIEL (Strictement conforme au PDF Sidi Ifni) */}
+          {/* ========================================================================= */}
+          {viewMode === 'modele_officiel' && (
+            <div className="bg-white border-2 border-slate-300 rounded-xl p-5 sm:p-8 shadow-sm space-y-6 overflow-hidden">
+              
+              {/* Official Moroccan Hospital Letterhead */}
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs border-b border-slate-900 pb-4">
+                <div className="text-left font-serif space-y-0.5 text-center sm:text-left">
+                  <div className="font-bold text-slate-900 text-sm">Royaume du Maroc</div>
+                  <div className="text-slate-800 text-[11px]">Ministère de la santé et de la protection sociale</div>
+                  <div className="text-slate-800 text-[11px]">Délégation provinciale de Sidi Ifni</div>
+                  <div className="text-slate-800 text-[11px] font-semibold">Centre hospitalier provincial Sidi Ifni</div>
+                </div>
 
-                    {/* Columns for days 1 to 28/29/30/31 */}
-                    {Array.from({ length: daysCount }, (_, i) => i + 1).map(day => {
-                      const dow = getDayOfWeekShort(selectedYear, selectedMonth, day);
-                      const isWeekend = dow === 'Sa' || dow === 'Di';
+                <div className="flex flex-col items-center justify-center shrink-0">
+                  <MoroccanCoatOfArms className="w-16 h-16" />
+                </div>
 
-                      return (
+                <div className="text-right font-serif space-y-0.5 text-center sm:text-right" dir="rtl">
+                  <div className="font-bold text-slate-900 text-sm">المملكة المغربية</div>
+                  <div className="text-slate-800 text-[11px]">وزارة الصحة والحماية الاجتماعية</div>
+                  <div className="text-slate-800 text-[11px]">المندوبية الإقليمية لسيدي إفني</div>
+                  <div className="text-slate-800 text-[11px] font-semibold">المركز الاستشفائي الإقليمي سيدي إفني</div>
+                </div>
+              </div>
+
+              {/* Main Title matching template: Liste de garde/horaire normal */}
+              <div className="text-center pt-1 pb-1">
+                <h2 className="text-2xl sm:text-3xl font-normal text-slate-900 tracking-tight font-serif">
+                  Liste de garde/horaire normal
+                </h2>
+              </div>
+
+              {/* Sub-header single line matching template */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs font-serif text-slate-900 border-b border-slate-200 pb-3">
+                <div>
+                  <span className="font-bold">Service : </span>
+                  <span>Bloc opératoire</span>
+                </div>
+                <div>
+                  <span className="font-bold">Mois : </span>
+                  <span className="capitalize font-medium">{activeRecord?.moisNom || MOIS_FR[selectedMonth - 1]}</span>
+                </div>
+                <div>
+                  <span className="font-bold">Année : </span>
+                  <span className="font-medium">{selectedYear}</span>
+                </div>
+                <div>
+                  <span className="font-bold">Cadre : </span>
+                  <span className="font-semibold text-teal-900">
+                    {activeRecord?.cadreLibelle || (
+                      activeCategory === 'anesth' 
+                        ? 'Infirmiers en anesthésie-réanimation' 
+                        : activeCategory === 'aide_op_panseur' 
+                          ? 'Infirmiers panseurs/aide-opératoire' 
+                          : 'Infirmiers en stérilisation'
+                    )}
+                  </span>
+                </div>
+              </div>
+
+              {/* Official Table Grid with diagonal header cell */}
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse border border-slate-900 text-[11px]">
+                  <thead>
+                    <tr className="border-b border-slate-900 text-slate-900 h-11 bg-slate-50/50">
+                      
+                      {/* Diagonal split header cell: JOURS top-right / NOM COMPLET bottom-left */}
+                      <th className="border border-slate-900 p-0 w-48 min-w-[190px] relative font-serif select-none">
+                        <svg className="absolute inset-0 w-full h-full" preserveAspectRatio="none">
+                          <line x1="0" y1="0" x2="100%" y2="100%" stroke="#0f172a" strokeWidth="1.2" />
+                        </svg>
+                        <div className="absolute top-1 right-2 text-[10px] font-bold tracking-wider text-slate-800">
+                          JOURS
+                        </div>
+                        <div className="absolute bottom-1 left-2 text-[10px] font-bold tracking-wider text-slate-800 text-left leading-tight">
+                          NOM<br/>COMPLET
+                        </div>
+                      </th>
+
+                      {/* 1 to 31 columns */}
+                      {Array.from({ length: 31 }, (_, i) => i + 1).map(day => (
                         <th 
                           key={day} 
-                          className={`px-1 py-1.5 text-center font-bold border-r border-slate-200 min-w-[34px] ${
-                            isWeekend ? 'bg-slate-200/80 text-rose-900 font-extrabold' : 'text-slate-800'
-                          }`}
+                          className="border border-slate-900 px-0.5 py-1 text-center font-mono font-bold text-slate-900 min-w-[28px]"
                         >
-                          <div className="leading-tight font-mono">{day}</div>
-                          <div className="text-[9px] font-normal text-slate-500">{dow}</div>
+                          {day}
                         </th>
-                      );
-                    })}
-
-                    {/* Summary Columns */}
-                    <th className="px-2 py-2.5 text-center font-bold text-amber-900 bg-amber-50 border-r border-slate-200 min-w-[45px]">
-                      GJ
-                    </th>
-                    <th className="px-2 py-2.5 text-center font-bold text-indigo-900 bg-indigo-50 border-r border-slate-200 min-w-[45px]">
-                      GN
-                    </th>
-                    <th className="px-2 py-2.5 text-center font-bold text-emerald-900 bg-emerald-50 border-r border-slate-200 min-w-[45px]">
-                      R
-                    </th>
-                    <th className="px-2 py-2.5 text-center font-bold text-sky-900 bg-sky-50 border-r border-slate-200 min-w-[45px]">
-                      HN
-                    </th>
-                    <th className="px-2 py-2.5 text-center font-bold text-rose-900 bg-rose-50 border-r border-slate-200 min-w-[45px]">
-                      CA
-                    </th>
-                    <th className="px-2 py-2.5 text-center font-bold text-teal-900 bg-teal-50 min-w-[60px]">
-                      Heures
-                    </th>
-                  </tr>
-                </thead>
-
-                {/* Table Body: Nurses */}
-                <tbody className="divide-y divide-slate-150">
-                  {(!activeRecord || activeRecord.lignes.length === 0) ? (
-                    <tr>
-                      <td colSpan={daysCount + 8} className="py-12 text-center text-slate-400">
-                        Aucun infirmier enregistré dans la catégorie {getCategoryLabel(activeCategory)}.
-                      </td>
+                      ))}
                     </tr>
-                  ) : (
-                    activeRecord.lignes.map((ligne, rIdx) => {
-                      return (
-                        <tr key={ligne.nurseId} className="hover:bg-slate-50/70 transition-colors">
-                          
-                          {/* Nurse Name & Identity sticky cell */}
-                          <td className="sticky left-0 z-10 bg-white hover:bg-slate-50 px-3 py-2 border-r border-slate-200 font-medium text-slate-900 whitespace-nowrap">
-                            <div className="flex items-center justify-between">
-                              <div>
-                                <div className="font-semibold text-slate-900 text-xs">
-                                  {rIdx + 1}. {ligne.nom.toUpperCase()} {ligne.prenom}
-                                </div>
-                                <div className="text-[10px] text-slate-500 flex items-center gap-1.5">
-                                  <span className="font-mono text-teal-700 font-semibold">{ligne.specialite}</span>
-                                  <span>·</span>
-                                  <span>Né(e) {ligne.dateNaissance}</span>
-                                </div>
-                              </div>
-                            </div>
+                  </thead>
+                  <tbody>
+                    {(!activeRecord || activeRecord.lignes.length === 0) ? (
+                      <tr>
+                        <td colSpan={32} className="py-12 text-center text-slate-400">
+                          Aucun personnel enregistré dans cette catégorie.
+                        </td>
+                      </tr>
+                    ) : (
+                      activeRecord.lignes.map((ligne, idx) => (
+                        <tr key={ligne.nurseId} className="border-b border-slate-900 h-8 hover:bg-slate-50 transition-colors">
+                          <td className="border border-slate-900 px-2.5 py-1 font-serif text-[11px] font-bold text-slate-900 uppercase whitespace-nowrap bg-white">
+                            {idx + 1}. {ligne.nom} {ligne.prenom}
                           </td>
-
-                          {/* PPR */}
-                          <td className="px-2 py-2 text-center font-mono text-[10px] text-slate-600 border-r border-slate-200">
-                            {ligne.ppr}
-                          </td>
-
-                          {/* Fonction */}
-                          <td className="px-2 py-2 text-center text-[10px] text-slate-700 border-r border-slate-200 truncate max-w-[100px]" title={ligne.fonction}>
-                            {ligne.fonction}
-                          </td>
-
-                          {/* Days Cells */}
-                          {Array.from({ length: daysCount }, (_, i) => i + 1).map(day => {
+                          {Array.from({ length: 31 }, (_, i) => i + 1).map(day => {
+                            const isPastMonth = day > daysCount;
                             const cur = ligne.assignments[day];
-                            const shift = cur?.shift || '';
-                            const isLocked = cur?.isLocked;
-                            const isWeekend = cur?.isWeekend;
+                            const s = isPastMonth ? '/' : (cur?.shift || '');
 
-                            let bgClass = 'bg-white hover:bg-slate-100 text-slate-400';
-                            let borderClass = 'border-slate-200';
-
-                            if (shift === 'GJ') {
-                              bgClass = 'bg-amber-100 hover:bg-amber-200 text-amber-950 font-bold';
-                              borderClass = 'border-amber-300';
-                            } else if (shift === 'GN') {
-                              bgClass = 'bg-indigo-100 hover:bg-indigo-200 text-indigo-950 font-bold';
-                              borderClass = 'border-indigo-300';
-                            } else if (shift === 'R') {
-                              bgClass = 'bg-emerald-100 hover:bg-emerald-200 text-emerald-950 font-bold';
-                              borderClass = 'border-emerald-300';
-                            } else if (shift === 'HN') {
-                              bgClass = 'bg-sky-100 hover:bg-sky-200 text-sky-950 font-bold';
-                              borderClass = 'border-sky-300';
-                            } else if (shift === 'CA') {
-                              bgClass = 'bg-rose-100 hover:bg-rose-200 text-rose-950 font-bold';
-                              borderClass = 'border-rose-300';
-                            } else if (isWeekend) {
-                              bgClass = 'bg-slate-50 hover:bg-slate-100 text-slate-300';
-                            }
+                            let colorClass = 'text-slate-400 hover:bg-slate-100';
+                            if (isPastMonth) colorClass = 'text-slate-300 bg-slate-50 cursor-not-allowed';
+                            else if (s === 'GJ') colorClass = 'bg-amber-100 text-amber-950 font-bold hover:bg-amber-200';
+                            else if (s === 'GN') colorClass = 'bg-indigo-100 text-indigo-950 font-bold hover:bg-indigo-200';
+                            else if (s === 'R') colorClass = 'bg-emerald-100 text-emerald-950 font-bold hover:bg-emerald-200';
+                            else if (s === 'HN') colorClass = 'bg-sky-100 text-sky-950 font-bold hover:bg-sky-200';
+                            else if (s === 'CA') colorClass = 'bg-rose-100 text-rose-950 font-bold hover:bg-rose-200';
 
                             return (
-                              <td
-                                key={day}
-                                onClick={() => handleCellClick(ligne.nurseId, day)}
-                                title={`Jour ${day} : ${shift ? SHIFT_DEFINITIONS[shift]?.label : 'Non affecté'}${isLocked ? ` (Verrouillé préalable ${cur?.lockReason})` : ''} - Cliquez pour basculer`}
-                                className={`px-1 py-1.5 text-center font-mono text-[11px] cursor-pointer select-none transition-colors border-r ${borderClass} ${bgClass}`}
+                              <td 
+                                key={day} 
+                                onClick={() => {
+                                  if (!isPastMonth) handleCellClick(ligne.nurseId, day);
+                                }}
+                                title={!isPastMonth ? `Jour ${day} : ${s && s !== '/' ? (SHIFT_DEFINITIONS[s as ShiftCode]?.label || s) : 'Non affecté'} - Cliquez pour modifier` : undefined}
+                                className={`border border-slate-900 px-0.5 py-0.5 text-center font-mono text-[11px] select-none transition-colors ${
+                                  !isPastMonth ? 'cursor-pointer' : ''
+                                } ${colorClass}`}
                               >
-                                {shift || '-'}
+                                {s || '-'}
                               </td>
                             );
                           })}
-
-                          {/* Totals */}
-                          <td className="px-2 py-2 text-center font-mono font-bold text-amber-950 bg-amber-50/70 border-r border-slate-200">
-                            {ligne.totalGJ}
-                          </td>
-                          <td className="px-2 py-2 text-center font-mono font-bold text-indigo-950 bg-indigo-50/70 border-r border-slate-200">
-                            {ligne.totalGN}
-                          </td>
-                          <td className="px-2 py-2 text-center font-mono font-bold text-emerald-950 bg-emerald-50/70 border-r border-slate-200">
-                            {ligne.totalR}
-                          </td>
-                          <td className="px-2 py-2 text-center font-mono font-bold text-sky-950 bg-sky-50/70 border-r border-slate-200">
-                            {ligne.totalHN}
-                          </td>
-                          <td className="px-2 py-2 text-center font-mono font-bold text-rose-950 bg-rose-50/70 border-r border-slate-200">
-                            {ligne.totalCA}
-                          </td>
-                          <td className="px-2 py-2 text-center font-mono font-bold text-teal-900 bg-teal-50/70">
-                            {ligne.totalHeuresGarde}h
-                          </td>
                         </tr>
-                      );
-                    })
-                  )}
-                </tbody>
+                      ))
+                    )}
 
-                {/* Daily Coverage Summary Footer */}
-                <tfoot>
-                  <tr className="bg-slate-100 border-t-2 border-slate-300 text-slate-900 font-semibold">
-                    <td className="sticky left-0 z-20 bg-slate-100 px-3 py-2 font-bold text-left border-r border-slate-200">
-                      Total Gardes de Jour (GJ)
-                    </td>
-                    <td className="border-r border-slate-200" colSpan={2}></td>
-                    {dailyCoverage.map(c => (
-                      <td 
-                        key={c.day} 
-                        className={`px-1 py-1 text-center font-mono font-bold border-r border-slate-200 ${
-                          c.countGJ === 0 ? 'bg-rose-100 text-rose-900' : 'text-amber-900'
-                        }`}
-                        title={`Jour ${c.day} : ${c.countGJ} garde(s) de jour`}
-                      >
-                        {c.countGJ}
-                      </td>
+                    {/* Extra blank rows matching official paper sheet aesthetic */}
+                    {Array.from({ length: Math.max(0, 8 - (activeRecord?.lignes.length || 0)) }).map((_, idx) => (
+                      <tr key={`empty-row-${idx}`} className="border-b border-slate-900 h-8 text-slate-400">
+                        <td className="border border-slate-900 px-2.5 py-1 bg-white">&nbsp;</td>
+                        {Array.from({ length: 31 }, (_, i) => i + 1).map(day => (
+                          <td key={day} className="border border-slate-900 px-0.5 py-0.5 text-center bg-white">&nbsp;</td>
+                        ))}
+                      </tr>
                     ))}
-                    <td colSpan={6} className="bg-slate-100"></td>
-                  </tr>
+                  </tbody>
+                </table>
+              </div>
 
-                  <tr className="bg-slate-100 border-t border-slate-200 text-slate-900 font-semibold">
-                    <td className="sticky left-0 z-20 bg-slate-100 px-3 py-2 font-bold text-left border-r border-slate-200">
-                      Total Gardes de Nuit (GN)
-                    </td>
-                    <td className="border-r border-slate-200" colSpan={2}></td>
-                    {dailyCoverage.map(c => (
-                      <td 
-                        key={c.day} 
-                        className={`px-1 py-1 text-center font-mono font-bold border-r border-slate-200 ${
-                          c.countGN === 0 ? 'bg-rose-100 text-rose-900' : 'text-indigo-900'
-                        }`}
-                        title={`Jour ${c.day} : ${c.countGN} garde(s) de nuit`}
-                      >
-                        {c.countGN}
-                      </td>
-                    ))}
-                    <td colSpan={6} className="bg-slate-100"></td>
-                  </tr>
-                </tfoot>
+              {/* Exact Legend matching template */}
+              <div className="flex flex-wrap items-center justify-between text-xs font-serif text-slate-900 pt-3 px-2 border-t border-slate-200">
+                <span className="font-bold">NB :</span>
+                <span><span className="font-bold">GJ :</span> garde de jour</span>
+                <span><span className="font-bold">GN :</span> garde de nuit</span>
+                <span><span className="font-bold">R :</span> récupération</span>
+                <span><span className="font-bold">HN :</span> horaire normal</span>
+                <span><span className="font-bold">CA :</span> congé administratif</span>
+              </div>
 
-              </table>
+              {/* Exact Signatures row matching template */}
+              <div className="pt-10 grid grid-cols-1 sm:grid-cols-3 gap-6 text-xs font-serif text-slate-900">
+                <div className="space-y-12">
+                  <div className="font-bold">Infirmier Chef :</div>
+                  <div className="border-b border-dotted border-slate-400 w-3/4"></div>
+                </div>
+
+                <div className="space-y-12 text-left sm:text-center">
+                  <div className="font-bold">Chef du PSI :</div>
+                  <div className="border-b border-dotted border-slate-400 w-3/4 sm:mx-auto"></div>
+                </div>
+
+                <div className="space-y-12 text-left sm:text-right">
+                  <div className="font-bold">Le directeur :</div>
+                  <div className="border-b border-dotted border-slate-400 w-3/4 sm:ml-auto"></div>
+                </div>
+              </div>
+
             </div>
-          </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* VIEW MODE 2: VUE ÉTENDUE (Avec Totaux, PPR, Jours Semaine, Couverture) */}
+          {/* ========================================================================= */}
+          {viewMode === 'vue_etendue' && (
+            <div className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse text-[11px]">
+                  
+                  {/* Table Header */}
+                  <thead>
+                    <tr className="bg-slate-100 border-b border-slate-200 text-slate-700">
+                      <th className="sticky left-0 z-20 bg-slate-100 px-3 py-2.5 text-left font-bold text-slate-900 border-r border-slate-200 w-52 min-w-[210px]">
+                        Personnel (du plus âgé au plus jeune)
+                      </th>
+                      <th className="px-2 py-2.5 text-center font-semibold border-r border-slate-200 w-20">
+                        PPR
+                      </th>
+                      <th className="px-2 py-2.5 text-center font-semibold border-r border-slate-200 w-24">
+                        Fonction
+                      </th>
+
+                      {/* Columns for days 1 to daysCount */}
+                      {Array.from({ length: daysCount }, (_, i) => i + 1).map(day => {
+                        const dow = getDayOfWeekShort(selectedYear, selectedMonth, day);
+                        const isWeekend = dow === 'Sa' || dow === 'Di';
+
+                        return (
+                          <th 
+                            key={day} 
+                            className={`px-1 py-1.5 text-center font-bold border-r border-slate-200 min-w-[34px] ${
+                              isWeekend ? 'bg-slate-200/80 text-rose-900 font-extrabold' : 'text-slate-800'
+                            }`}
+                          >
+                            <div className="leading-tight font-mono">{day}</div>
+                            <div className="text-[9px] font-normal text-slate-500">{dow}</div>
+                          </th>
+                        );
+                      })}
+
+                      {/* Summary Columns */}
+                      <th className="px-2 py-2.5 text-center font-bold text-amber-900 bg-amber-50 border-r border-slate-200 min-w-[45px]">
+                        GJ
+                      </th>
+                      <th className="px-2 py-2.5 text-center font-bold text-indigo-900 bg-indigo-50 border-r border-slate-200 min-w-[45px]">
+                        GN
+                      </th>
+                      <th className="px-2 py-2.5 text-center font-bold text-emerald-900 bg-emerald-50 border-r border-slate-200 min-w-[45px]">
+                        R
+                      </th>
+                      <th className="px-2 py-2.5 text-center font-bold text-sky-900 bg-sky-50 border-r border-slate-200 min-w-[45px]">
+                        HN
+                      </th>
+                      <th className="px-2 py-2.5 text-center font-bold text-rose-900 bg-rose-50 border-r border-slate-200 min-w-[45px]">
+                        CA
+                      </th>
+                      <th className="px-2 py-2.5 text-center font-bold text-teal-900 bg-teal-50 min-w-[60px]">
+                        Heures
+                      </th>
+                    </tr>
+                  </thead>
+
+                  {/* Table Body: Nurses */}
+                  <tbody className="divide-y divide-slate-150">
+                    {(!activeRecord || activeRecord.lignes.length === 0) ? (
+                      <tr>
+                        <td colSpan={daysCount + 8} className="py-12 text-center text-slate-400">
+                          Aucun infirmier enregistré dans la catégorie {getCategoryLabel(activeCategory)}.
+                        </td>
+                      </tr>
+                    ) : (
+                      activeRecord.lignes.map((ligne, rIdx) => {
+                        return (
+                          <tr key={ligne.nurseId} className="hover:bg-slate-50/70 transition-colors">
+                            
+                            {/* Nurse Name & Identity sticky cell */}
+                            <td className="sticky left-0 z-10 bg-white hover:bg-slate-50 px-3 py-2 border-r border-slate-200 font-medium text-slate-900 whitespace-nowrap">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <div className="font-semibold text-slate-900 text-xs">
+                                    {rIdx + 1}. {ligne.nom.toUpperCase()} {ligne.prenom}
+                                  </div>
+                                  <div className="text-[10px] text-slate-500 flex items-center gap-1.5">
+                                    <span className="font-mono text-teal-700 font-semibold">{ligne.specialite}</span>
+                                    <span>·</span>
+                                    <span>Né(e) {ligne.dateNaissance}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+
+                            {/* PPR */}
+                            <td className="px-2 py-2 text-center font-mono text-[10px] text-slate-600 border-r border-slate-200">
+                              {ligne.ppr}
+                            </td>
+
+                            {/* Fonction */}
+                            <td className="px-2 py-2 text-center text-[10px] text-slate-700 border-r border-slate-200 truncate max-w-[100px]" title={ligne.fonction}>
+                              {ligne.fonction}
+                            </td>
+
+                            {/* Days Cells */}
+                            {Array.from({ length: daysCount }, (_, i) => i + 1).map(day => {
+                              const cur = ligne.assignments[day];
+                              const shift = cur?.shift || '';
+                              const isLocked = cur?.isLocked;
+                              const isWeekend = cur?.isWeekend;
+
+                              let bgClass = 'bg-white hover:bg-slate-100 text-slate-400';
+                              let borderClass = 'border-slate-200';
+
+                              if (shift === 'GJ') {
+                                bgClass = 'bg-amber-100 hover:bg-amber-200 text-amber-950 font-bold';
+                                borderClass = 'border-amber-300';
+                              } else if (shift === 'GN') {
+                                bgClass = 'bg-indigo-100 hover:bg-indigo-200 text-indigo-950 font-bold';
+                                borderClass = 'border-indigo-300';
+                              } else if (shift === 'R') {
+                                bgClass = 'bg-emerald-100 hover:bg-emerald-200 text-emerald-950 font-bold';
+                                borderClass = 'border-emerald-300';
+                              } else if (shift === 'HN') {
+                                bgClass = 'bg-sky-100 hover:bg-sky-200 text-sky-950 font-bold';
+                                borderClass = 'border-sky-300';
+                              } else if (shift === 'CA') {
+                                bgClass = 'bg-rose-100 hover:bg-rose-200 text-rose-950 font-bold';
+                                borderClass = 'border-rose-300';
+                              } else if (isWeekend) {
+                                bgClass = 'bg-slate-50 hover:bg-slate-100 text-slate-300';
+                              }
+
+                              return (
+                                <td
+                                  key={day}
+                                  onClick={() => handleCellClick(ligne.nurseId, day)}
+                                  title={`Jour ${day} : ${shift ? SHIFT_DEFINITIONS[shift]?.label : 'Non affecté'}${isLocked ? ` (Verrouillé préalable ${cur?.lockReason})` : ''} - Cliquez pour basculer`}
+                                  className={`px-1 py-1.5 text-center font-mono text-[11px] cursor-pointer select-none transition-colors border-r ${borderClass} ${bgClass}`}
+                                >
+                                  {shift || '-'}
+                                </td>
+                              );
+                            })}
+
+                            {/* Totals */}
+                            <td className="px-2 py-2 text-center font-mono font-bold text-amber-950 bg-amber-50/70 border-r border-slate-200">
+                              {ligne.totalGJ}
+                            </td>
+                            <td className="px-2 py-2 text-center font-mono font-bold text-indigo-950 bg-indigo-50/70 border-r border-slate-200">
+                              {ligne.totalGN}
+                            </td>
+                            <td className="px-2 py-2 text-center font-mono font-bold text-emerald-950 bg-emerald-50/70 border-r border-slate-200">
+                              {ligne.totalR}
+                            </td>
+                            <td className="px-2 py-2 text-center font-mono font-bold text-sky-950 bg-sky-50/70 border-r border-slate-200">
+                              {ligne.totalHN}
+                            </td>
+                            <td className="px-2 py-2 text-center font-mono font-bold text-rose-950 bg-rose-50/70 border-r border-slate-200">
+                              {ligne.totalCA}
+                            </td>
+                            <td className="px-2 py-2 text-center font-mono font-bold text-teal-900 bg-teal-50/70">
+                              {ligne.totalHeuresGarde}h
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+
+                  {/* Daily Coverage Summary Footer */}
+                  <tfoot>
+                    <tr className="bg-slate-100 border-t-2 border-slate-300 text-slate-900 font-semibold">
+                      <td className="sticky left-0 z-20 bg-slate-100 px-3 py-2 font-bold text-left border-r border-slate-200">
+                        Total Gardes de Jour (GJ)
+                      </td>
+                      <td className="border-r border-slate-200" colSpan={2}></td>
+                      {dailyCoverage.map(c => (
+                        <td 
+                          key={c.day} 
+                          className={`px-1 py-1 text-center font-mono font-bold border-r border-slate-200 ${
+                            c.countGJ === 0 ? 'bg-rose-100 text-rose-900' : 'text-amber-900'
+                          }`}
+                          title={`Jour ${c.day} : ${c.countGJ} garde(s) de jour`}
+                        >
+                          {c.countGJ}
+                        </td>
+                      ))}
+                      <td colSpan={6} className="bg-slate-100"></td>
+                    </tr>
+
+                    <tr className="bg-slate-100 border-t border-slate-200 text-slate-900 font-semibold">
+                      <td className="sticky left-0 z-20 bg-slate-100 px-3 py-2 font-bold text-left border-r border-slate-200">
+                        Total Gardes de Nuit (GN)
+                      </td>
+                      <td className="border-r border-slate-200" colSpan={2}></td>
+                      {dailyCoverage.map(c => (
+                        <td 
+                          key={c.day} 
+                          className={`px-1 py-1 text-center font-mono font-bold border-r border-slate-200 ${
+                            c.countGN === 0 ? 'bg-rose-100 text-rose-900' : 'text-indigo-900'
+                          }`}
+                          title={`Jour ${c.day} : ${c.countGN} garde(s) de nuit`}
+                        >
+                          {c.countGN}
+                        </td>
+                      ))}
+                      <td colSpan={6} className="bg-slate-100"></td>
+                    </tr>
+                  </tfoot>
+
+                </table>
+              </div>
+            </div>
+          )}
 
         </div>
       )}
@@ -1346,97 +1576,153 @@ export const GuardScheduleView: React.FC<GuardScheduleViewProps> = ({
             {/* Document Printable Header */}
             <div className="space-y-6 print:p-0">
               
-              <div className="flex justify-between items-start text-xs border-b-2 border-slate-900 pb-4">
-                <div>
-                  <div className="font-bold text-slate-900 tracking-wide uppercase">Royaume du Maroc</div>
-                  <div className="text-slate-700 font-medium">Ministère de la Santé et de la Protection Sociale</div>
-                  <div className="text-slate-700 font-medium">Direction Régionale de la Santé</div>
-                  <div className="text-slate-700 font-semibold mt-1">Service du Bloc Opératoire Central</div>
+              {/* Official Template Printable Header (Bilingual with Moroccan Royal Coat of Arms) */}
+              <div className="flex items-center justify-between text-xs border-b border-slate-900 pb-3">
+                <div className="text-left font-serif space-y-0.5">
+                  <div className="font-bold text-slate-900 text-[13px]">Royaume du Maroc</div>
+                  <div className="text-slate-800 text-[11px]">Ministère de la santé et de la protection sociale</div>
+                  <div className="text-slate-800 text-[11px]">Délégation provinciale de Sidi Ifni</div>
+                  <div className="text-slate-800 text-[11px]">Centre hospitalier provincial Sidi Ifni</div>
                 </div>
-                <div className="text-right font-mono text-[11px] text-slate-600">
-                  <div>Réf : BO/GARDE/{printRecord.annee}/{String(printRecord.mois).padStart(2, '0')}</div>
-                  <div>Date : {new Date().toLocaleDateString('fr-FR')}</div>
-                  <div className="font-bold text-teal-900 mt-1">Statut : {printRecord.statut} (v{printRecord.version})</div>
+
+                <div className="flex flex-col items-center justify-center">
+                  <MoroccanCoatOfArms className="w-16 h-16" />
+                </div>
+
+                <div className="text-right font-serif space-y-0.5" dir="rtl">
+                  <div className="font-bold text-slate-900 text-[13px]">المملكة المغربية</div>
+                  <div className="text-slate-800 text-[11px]">وزارة الصحة والحماية الاجتماعية</div>
+                  <div className="text-slate-800 text-[11px]">المندوبية الإقليمية لسيدي إفني</div>
+                  <div className="text-slate-800 text-[11px]">المركز الاستشفائي الإقليمي سيدي إفني</div>
                 </div>
               </div>
 
-              <div className="text-center space-y-1">
-                <h2 className="text-lg font-black text-slate-900 uppercase tracking-tight">
-                  TABLEAU MENSUEL DE GARDE ET SYSTÈME NORMAL
+              {/* Title exactly as in template */}
+              <div className="text-center pt-2 pb-1">
+                <h2 className="text-2xl font-normal text-slate-900 tracking-tight font-serif">
+                  Liste de garde/horaire normal
                 </h2>
-                <div className="text-sm font-bold text-teal-800">
-                  CATÉGORIE : {printRecord.categorieLibelle.toUpperCase()}
+              </div>
+
+              {/* Meta single line: Service, Mois, Année, Cadre */}
+              <div className="grid grid-cols-4 gap-4 text-xs font-serif text-slate-900 border-b border-slate-200 pb-2">
+                <div>
+                  <span className="font-bold">Service : </span>
+                  <span>Bloc opératoire</span>
                 </div>
-                <div className="text-xs font-semibold text-slate-600">
-                  Mois : {printRecord.moisLibelle} · Cycle officiel : GJ (12h) → GN (12h) → Récupération 48h (R)
+                <div>
+                  <span className="font-bold">Mois : </span>
+                  <span className="capitalize">{printRecord.moisNom || printRecord.moisLibelle.split(' ')[0]}</span>
+                </div>
+                <div>
+                  <span className="font-bold">Année : </span>
+                  <span>{printRecord.annee}</span>
+                </div>
+                <div>
+                  <span className="font-bold">Cadre : </span>
+                  <span>
+                    {printRecord.cadreLibelle || (
+                      printRecord.categorie === 'anesth' 
+                        ? 'Infirmiers en anesthésie-réanimation' 
+                        : printRecord.categorie === 'aide_op_panseur' 
+                          ? 'Infirmiers panseurs/aide-opératoire' 
+                          : 'Infirmiers en stérilisation'
+                    )}
+                  </span>
                 </div>
               </div>
 
-              {/* Condensed print table */}
+              {/* Exact Table Grid with diagonal header cell */}
               <div className="overflow-x-auto">
-                <table className="w-full border-collapse border border-slate-300 text-[10px]">
+                <table className="w-full border-collapse border border-slate-900 text-[10px]">
                   <thead>
-                    <tr className="bg-slate-100 border-b border-slate-300 text-slate-900 font-bold">
-                      <th className="border border-slate-300 px-2 py-1.5 text-left w-36">Nom & Prénom</th>
-                      <th className="border border-slate-300 px-1 py-1.5 text-center w-14">PPR</th>
-                      <th className="border border-slate-300 px-1 py-1.5 text-center w-12">Spé.</th>
-                      {Array.from({ length: getDaysInMonth(printRecord.annee, printRecord.mois) }, (_, i) => i + 1).map(day => (
-                        <th key={day} className="border border-slate-300 px-0.5 py-1 text-center font-mono">
+                    <tr className="border-b border-slate-900 text-slate-900 h-10">
+                      
+                      {/* Diagonal split header cell: JOURS top-right / NOM COMPLET bottom-left */}
+                      <th className="border border-slate-900 p-0 w-44 min-w-[170px] relative font-serif">
+                        <svg className="absolute inset-0 w-full h-full" preserveAspectRatio="none">
+                          <line x1="0" y1="0" x2="100%" y2="100%" stroke="#0f172a" strokeWidth="1" />
+                        </svg>
+                        <div className="absolute top-1 right-2 text-[9px] font-bold tracking-wider text-slate-800">
+                          JOURS
+                        </div>
+                        <div className="absolute bottom-1 left-2 text-[9px] font-bold tracking-wider text-slate-800 text-left leading-tight">
+                          NOM<br/>COMPLET
+                        </div>
+                      </th>
+
+                      {/* 1 to 31 columns */}
+                      {Array.from({ length: 31 }, (_, i) => i + 1).map(day => (
+                        <th 
+                          key={day} 
+                          className="border border-slate-900 px-0.5 py-1 text-center font-mono font-bold text-slate-900 min-w-[22px]"
+                        >
                           {day}
                         </th>
                       ))}
-                      <th className="border border-slate-300 px-1 py-1.5 text-center bg-amber-50">GJ</th>
-                      <th className="border border-slate-300 px-1 py-1.5 text-center bg-indigo-50">GN</th>
-                      <th className="border border-slate-300 px-1 py-1.5 text-center bg-sky-50">HN</th>
-                      <th className="border border-slate-300 px-1 py-1.5 text-center bg-rose-50">CA</th>
-                      <th className="border border-slate-300 px-1.5 py-1.5 text-center bg-teal-50">Total</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {printRecord.lignes.map((l, idx) => (
-                      <tr key={l.nurseId} className="border-b border-slate-300">
-                        <td className="border border-slate-300 px-2 py-1 font-semibold whitespace-nowrap">
-                          {idx + 1}. {l.nom.toUpperCase()} {l.prenom}
+                    {printRecord.lignes.map((l) => (
+                      <tr key={l.nurseId} className="border-b border-slate-900 h-7 text-slate-900">
+                        <td className="border border-slate-900 px-2 py-1 font-serif text-[10px] font-semibold uppercase whitespace-nowrap">
+                          {l.nom} {l.prenom}
                         </td>
-                        <td className="border border-slate-300 px-1 py-1 text-center font-mono">{l.ppr}</td>
-                        <td className="border border-slate-300 px-1 py-1 text-center font-semibold">{l.specialite}</td>
-                        {Array.from({ length: getDaysInMonth(printRecord.annee, printRecord.mois) }, (_, i) => i + 1).map(day => {
-                          const s = l.assignments[day]?.shift || '';
+                        {Array.from({ length: 31 }, (_, i) => i + 1).map(day => {
+                          const isPastMonth = day > getDaysInMonth(printRecord.annee, printRecord.mois);
+                          const s = isPastMonth ? '/' : (l.assignments[day]?.shift || '');
                           return (
-                            <td key={day} className="border border-slate-300 px-0.5 py-1 text-center font-mono font-bold">
+                            <td 
+                              key={day} 
+                              className={`border border-slate-900 px-0.5 py-0.5 text-center font-mono text-[10px] font-bold ${
+                                isPastMonth ? 'text-slate-300 bg-slate-50' : 'text-slate-900'
+                              }`}
+                            >
                               {s}
                             </td>
                           );
                         })}
-                        <td className="border border-slate-300 px-1 py-1 text-center font-mono font-bold bg-amber-50">{l.totalGJ}</td>
-                        <td className="border border-slate-300 px-1 py-1 text-center font-mono font-bold bg-indigo-50">{l.totalGN}</td>
-                        <td className="border border-slate-300 px-1 py-1 text-center font-mono font-bold bg-sky-50">{l.totalHN}</td>
-                        <td className="border border-slate-300 px-1 py-1 text-center font-mono font-bold bg-rose-50">{l.totalCA}</td>
-                        <td className="border border-slate-300 px-1 py-1 text-center font-mono font-bold bg-teal-50">{l.totalHeuresGarde}h</td>
+                      </tr>
+                    ))}
+
+                    {/* Fill remaining empty rows to maintain authentic Moroccan official paper grid look */}
+                    {Array.from({ length: Math.max(0, 10 - printRecord.lignes.length) }).map((_, idx) => (
+                      <tr key={`empty-${idx}`} className="border-b border-slate-900 h-7 text-slate-900">
+                        <td className="border border-slate-900 px-2 py-1">&nbsp;</td>
+                        {Array.from({ length: 31 }, (_, i) => i + 1).map(day => (
+                          <td key={day} className="border border-slate-900 px-0.5 py-0.5 text-center">&nbsp;</td>
+                        ))}
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
 
-              {/* Signatures & Visas Block */}
-              <div className="pt-8 grid grid-cols-2 gap-12 text-xs">
-                <div className="border border-slate-300 rounded p-4 text-center space-y-12">
-                  <div className="font-bold text-slate-900 uppercase">
-                    L'Infirmier Chef du Bloc Opératoire
-                  </div>
-                  <div className="text-[10px] text-slate-400 italic">
-                    (Date, Signature & Cachet)
-                  </div>
+              {/* Exact Legend matching template: NB : GJ : garde de jour ... */}
+              <div className="flex flex-wrap items-center justify-between text-[11px] font-serif text-slate-900 pt-3 px-2">
+                <span className="font-bold">NB :</span>
+                <span><span className="font-bold">GJ :</span> garde de jour</span>
+                <span><span className="font-bold">GN :</span> garde de nuit</span>
+                <span><span className="font-bold">R :</span> récupération</span>
+                <span><span className="font-bold">HN :</span> horaire normal</span>
+                <span><span className="font-bold">CA :</span> congé administratif</span>
+              </div>
+
+              {/* Exact Signatures line matching template: Infirmier Chef : | Chef du PSI : | Le directeur : */}
+              <div className="pt-10 grid grid-cols-3 gap-6 text-xs font-serif text-slate-900">
+                <div className="space-y-14">
+                  <div className="font-bold">Infirmier Chef :</div>
+                  <div className="border-b border-dotted border-slate-400 w-3/4"></div>
                 </div>
 
-                <div className="border border-slate-300 rounded p-4 text-center space-y-12">
-                  <div className="font-bold text-slate-900 uppercase">
-                    Le Médecin Chef de Service du Bloc Opératoire
-                  </div>
-                  <div className="text-[10px] text-slate-400 italic">
-                    (Vu et approuvé pour exécution)
-                  </div>
+                <div className="space-y-14 text-center">
+                  <div className="font-bold">Chef du PSI :</div>
+                  <div className="border-b border-dotted border-slate-400 w-3/4 mx-auto"></div>
+                </div>
+
+                <div className="space-y-14 text-right">
+                  <div className="font-bold">Le directeur :</div>
+                  <div className="border-b border-dotted border-slate-400 w-3/4 ml-auto"></div>
                 </div>
               </div>
 
