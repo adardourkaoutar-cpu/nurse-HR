@@ -25,6 +25,7 @@ import {
   RefreshCw
 } from 'lucide-react';
 import type { User } from 'firebase/auth';
+import { LeavesMonthlyChart } from './LeavesMonthlyChart';
 import { NurseStaff, DemandeConge, ReminderItem } from '../types/nurse';
 import { formatDateFr } from '../utils/calculations';
 
@@ -409,6 +410,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
 
       </div>
+
+      {/* Visualisation Recharts : Répartition des types de congés par mois sur l'année en cours */}
+      <LeavesMonthlyChart
+        demandes={demandes}
+        referenceYear={2026}
+        onNavigateToLeaves={() => onNavigateTab('conges')}
+      />
 
       {/* Grid: Alertes Imminentes & Répartition */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
