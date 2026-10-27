@@ -33,7 +33,7 @@ export const AuthSyncModal: React.FC<AuthSyncModalProps> = ({
   isSyncing
 }) => {
   const [tab, setTab] = useState<'login' | 'register'>('login');
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState('adardourkaoutar@gmail.com');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -155,9 +155,9 @@ export const AuthSyncModal: React.FC<AuthSyncModalProps> = ({
         <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 text-xs text-emerald-900 flex items-start gap-2.5">
           <ShieldCheck className="w-4 h-4 text-emerald-700 shrink-0 mt-0.5" />
           <div>
-            <span className="font-bold">Préservation intégrale des données :</span>
+            <span className="font-bold">Synchronisation PC ⮂ Mobile sans perte :</span>
             <p className="text-[11px] text-emerald-800 mt-0.5 leading-relaxed">
-              Vos infirmiers, congés et tableaux de garde déjà saisis sont conservés intacts et synchronisés dans votre espace Cloud sans aucune perte.
+              Connectez-vous avec ce même compte e-mail sur votre téléphone et votre ordinateur. Vos infirmiers, congés et plannings de garde s'actualiseront instantanément sur les deux appareils sans écraser votre travail.
             </p>
           </div>
         </div>

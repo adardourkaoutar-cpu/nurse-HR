@@ -171,20 +171,20 @@ export const Header: React.FC<HeaderProps> = ({
               className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs transition-all ${
                 currentUser 
                   ? 'bg-emerald-50 border-emerald-300 text-emerald-900 font-semibold' 
-                  : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'
+                  : 'bg-amber-50 border-amber-300 text-amber-900 hover:bg-amber-100 font-medium'
               }`}
             >
-              <Cloud className={`w-3.5 h-3.5 ${isSyncing ? 'animate-bounce text-teal-600' : currentUser ? 'text-emerald-600' : 'text-slate-500'}`} />
-              <span className="hidden sm:inline">
-                {currentUser ? (
-                  <span className="flex items-center gap-1">
-                    <span className="max-w-[110px] truncate">{currentUser.email?.split('@')[0]}</span>
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                  </span>
-                ) : (
-                  'Sync Cloud'
-                )}
-              </span>
+              <Cloud className={`w-3.5 h-3.5 ${isSyncing ? 'animate-bounce text-teal-600' : currentUser ? 'text-emerald-600' : 'text-amber-700'}`} />
+              {currentUser ? (
+                <span className="flex items-center gap-1 text-[11px] sm:text-xs">
+                  <span className="max-w-[70px] sm:max-w-[120px] truncate">{currentUser.email?.split('@')[0]}</span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                </span>
+              ) : (
+                <span className="text-[11px] sm:text-xs font-semibold">
+                  Connexion
+                </span>
+              )}
             </button>
 
             {/* Backup */}

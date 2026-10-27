@@ -15,7 +15,7 @@ import { ChangePasswordModal } from './components/ChangePasswordModal';
 import { RotationPlanningModal } from './components/RotationPlanningModal';
 import { GuardScheduleView } from './components/GuardScheduleView';
 import { AuthSyncModal } from './components/AuthSyncModal';
-import { CheckCircle2, Cloud } from 'lucide-react';
+import { CheckCircle2, Cloud, Smartphone, RefreshCw } from 'lucide-react';
 
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { collection, onSnapshot } from 'firebase/firestore';
@@ -228,12 +228,29 @@ export default function App() {
     }
   };
 
+  // Force cache refresh for mobile and desktop browsers
+  const handleForceRefresh = () => {
+    try {
+      if ('caches' in window) {
+        caches.keys().then((names) => {
+          names.forEach((name) => caches.delete(name));
+        });
+      }
+    } catch (e) {
+      console.warn('Cache clearing error:', e);
+    }
+    const timestamp = Date.now();
+    const url = new URL(window.location.href);
+    url.searchParams.set('v', timestamp.toString());
+    window.location.href = url.toString();
+  };
+
   // Printing document modal state
   const [printDocConfig, setPrintDocConfig] = useState<{
     isOpen: boolean;
     nurse: NurseStaff | null;
     demande?: DemandeConge | null;
-    typeDoc: 'cessation' | 'reprise' | 'dossier';
+    typeDoc: 'cessation' | 'reprise' | 'dossier' | 'les_deux';
   }>({
     isOpen: false,
     nurse: null,
@@ -485,7 +502,7 @@ export default function App() {
     setActiveTab('personnel');
   };
 
-  const handlePrintDoc = (demande: DemandeConge, nurse: NurseStaff, typeDoc: 'cessation' | 'reprise') => {
+  const handlePrintDoc = (demande: DemandeConge, nurse: NurseStaff, typeDoc: 'cessation' | 'reprise' | 'les_deux') => {
     setPrintDocConfig({
       isOpen: true,
       nurse,
@@ -563,6 +580,32 @@ export default function App() {
               className="text-emerald-800 hover:text-emerald-950 text-xs font-bold px-2 py-0.5 rounded hover:bg-emerald-100 transition-colors"
             >
               Fermer
+            </button>
+          </div>
+        )}
+
+        {/* Mobile & Multi-Device Sync Call-To-Action */}
+        {!currentUser && (
+          <div className="mb-5 p-3.5 bg-gradient-to-r from-amber-50 via-orange-50/50 to-amber-50 border border-amber-200 text-amber-950 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-2xs">
+            <div className="flex items-start sm:items-center gap-3">
+              <div className="p-2 bg-amber-200/80 text-amber-900 rounded-lg shrink-0">
+                <Smartphone className="w-4 h-4" />
+              </div>
+              <div className="text-xs">
+                <div className="font-bold text-amber-950 flex flex-wrap items-center gap-1.5">
+                  <span>Accès sur téléphone & synchronisation PC</span>
+                  <span className="px-1.5 py-0.2 bg-amber-200 text-amber-900 rounded text-[10px] font-mono">Non connecté sur cet appareil</span>
+                </div>
+                <div className="text-amber-900 mt-0.5">
+                  Pour afficher instantanément vos infirmiers et plannings créés sur votre PC, connectez-vous avec <span className="font-semibold underline">adardourkaoutar@gmail.com</span>. Vos données actuelles sont 100% préservées.
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={() => setIsAuthSyncOpen(true)}
+              className="w-full sm:w-auto px-3.5 py-1.5 text-xs font-semibold text-white bg-amber-800 hover:bg-amber-900 rounded-lg shadow-xs transition-colors shrink-0 text-center"
+            >
+              Se connecter
             </button>
           </div>
         )}
@@ -683,12 +726,20 @@ export default function App() {
 
       {/* Footer */}
       <footer className="bg-white border-t border-slate-200 py-4 mt-8 print:hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-500">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
           <div>
             <span className="font-semibold text-slate-800">BlocRH</span> · Gestion du Staff Infirmier du Bloc Opératoire
           </div>
-          <div className="text-slate-400">
-            Accès sécurisé par mot de passe · Données confidentielles du personnel hospitalier
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="text-slate-400">Accès sécurisé · Données hospitalières confidentielles</span>
+            <button
+              onClick={handleForceRefresh}
+              title="Vider le cache du navigateur mobile et recharger la dernière version"
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium text-slate-600 hover:text-teal-800 bg-slate-100 hover:bg-teal-50 border border-slate-200 rounded-md transition-colors"
+            >
+              <RefreshCw className="w-3 h-3" />
+              Forcer l'actualisation (Mobile / PC)
+            </button>
           </div>
         </div>
       </footer>

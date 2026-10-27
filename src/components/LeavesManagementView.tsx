@@ -109,7 +109,22 @@ export const LeavesManagementView: React.FC<LeavesManagementViewProps> = ({
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            {nurses.length > 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  const defaultDemande = demandes[0] || null;
+                  onPrintDoc(defaultDemande as any, nurses[0], 'cessation');
+                }}
+                className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-teal-800 bg-teal-50 hover:bg-teal-100 border border-teal-200 rounded-lg transition-colors whitespace-nowrap shadow-2xs"
+                title="Ouvrir le formulaire officiel de cessation et de reprise de service (CHP Sidi Ifni)"
+              >
+                <Printer className="w-3.5 h-3.5 text-teal-700" />
+                <span>Modèle Officiel (Cessation & Reprise)</span>
+              </button>
+            )}
+
             <button
               onClick={onNewLeave}
               className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium text-white bg-teal-700 hover:bg-teal-800 rounded-lg transition-colors whitespace-nowrap shadow-xs"
