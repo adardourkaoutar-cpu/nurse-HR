@@ -1,7 +1,18 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore, doc, getDocFromServer } from 'firebase/firestore';
-import firebaseConfig from '../firebase-applet-config.json';
+export const firebaseConfig = {
+  projectId: "gen-lang-client-0662954546",
+  appId: "1:525344944316:web:7f22bbc3603f7519f5a0b9",
+  apiKey: "AIzaSyDxwhttY1DdYtE4-m4CA8nDBbI3OuSI8W8",
+  authDomain: "gen-lang-client-0662954546.firebaseapp.com",
+  firestoreDatabaseId: "ai-studio-blocrhgestiondus-13136bee-5a4b-49b3-9d84-efaa81d9c619",
+  storageBucket: "gen-lang-client-0662954546.firebasestorage.app",
+  messagingSenderId: "525344944316",
+  measurementId: "",
+  oAuthClientId: "525344944316-k8jjgfo91a0p0h5qtjdcvf3fld0tm5p0.apps.googleusercontent.com",
+  recaptchaSiteKey: ""
+};
 
 const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
