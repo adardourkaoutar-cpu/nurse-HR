@@ -103,8 +103,14 @@ export const AuthSyncModal: React.FC<AuthSyncModalProps> = ({
         onClose();
       }, 1200);
     } catch (err: any) {
-      console.error(err);
-      setErrorMsg(err.message || 'Échec de la connexion avec Google.');
+      console.error('Google auth error:', err);
+      let errorText = err.message || 'Échec de la connexion avec Google.';
+      if (err.code === 'auth/unauthorized-domain' || err.message?.includes('unauthorized-domain') || err.message?.includes('invalid')) {
+        errorText = "Domaine Netlify non autorisé pour Google OAuth ou popup bloquée. Sur votre smartphone (raccourci), utilisez simplement la connexion par E-mail & Mot de passe ci-dessus !";
+      } else if (err.code === 'auth/popup-blocked' || err.code === 'auth/popup-closed-by-user') {
+        errorText = "La fenêtre popup Google a été bloquée par le raccourci mobile. Utilisez la connexion par E-mail et Mot de passe ci-dessus.";
+      }
+      setErrorMsg(errorText);
     } finally {
       setLoading(false);
     }
@@ -335,6 +341,14 @@ export const AuthSyncModal: React.FC<AuthSyncModalProps> = ({
               </svg>
               <span>Continuer avec Google</span>
             </button>
+
+            {/* Mobile PWA note */}
+            <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-[11px] text-slate-500 leading-relaxed flex items-start gap-2">
+              <Smartphone className="w-4 h-4 text-teal-700 shrink-0 mt-0.5" />
+              <div>
+                <strong className="text-slate-800">Conseil pour raccourci smartphone :</strong> Si Google affiche « Action non valide », c'est parce que les raccourcis mobiles bloquent les popups externes. Connectez-vous simplement avec votre <strong className="text-teal-900">E-mail et Mot de passe</strong> ci-dessus pour synchroniser en toute fluidité !
+              </div>
+            </div>
 
           </div>
         )}
